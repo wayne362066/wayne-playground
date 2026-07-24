@@ -14,11 +14,11 @@ return [
     [
         'key' => 'tarot',
         'name' => '塔羅',
-        'description' => '單張牌、三張牌與解讀功能規劃中。',
+        'description' => '透過引導式問答與三張牌，整理此刻值得留意的方向。',
         'icon' => 'sparkles',
         'route' => '/tarot',
         'enabled' => true,
-        'status' => 'coming_soon',
+        'status' => 'active',
         'sort_order' => 2,
     ],
     [

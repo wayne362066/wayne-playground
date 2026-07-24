@@ -48,6 +48,7 @@ onBeforeUnmount(() => mediaQuery?.removeEventListener('change', handleSystemThem
           <nav aria-label="主要導覽">
             <RouterLink to="/">首頁</RouterLink>
             <RouterLink to="/lottery">威力彩</RouterLink>
+            <RouterLink to="/tarot">塔羅</RouterLink>
             <RouterLink to="/lab">Lab</RouterLink>
           </nav>
           <button

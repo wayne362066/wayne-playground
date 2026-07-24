@@ -12,7 +12,8 @@ class ModulesApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.0.key', 'lottery')
-            ->assertJsonPath('data.1.status', 'coming_soon')
+            ->assertJsonPath('data.1.key', 'tarot')
+            ->assertJsonPath('data.1.status', 'active')
             ->assertJsonCount(3, 'data');
     }
 }
