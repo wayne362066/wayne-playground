@@ -161,6 +161,7 @@ AGENTS.md、docs/codex/decision-rubric.md、README 的架構／新增模組段�
 - 本地分支：{{branch}}
 - 基底 commit：{{完整 base SHA}}
 - HEAD commit：{{完整 HEAD SHA}}
+- Commit 訊息：{{type(scope):中文摘要}}
 - Remote／目標 ref：{{remote}}／{{remote ref}}
 - Commits：{{base..HEAD 的 commit 清單}}
 - Diff：{{變更檔案與統計；附可檢視路徑}}

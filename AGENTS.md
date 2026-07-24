@@ -26,6 +26,7 @@
 ## 功能、推送、發佈與不確定性 gate
 
 - 每個功能必須在獨立分支實作；開始改功能程式碼前確認基底、工作區與分支，不直接在 `main`、`master`、`develop` 或共用／發佈分支實作，也不在同一分支混入第二個功能。
+- Codex 建立的一般 commit 訊息必須使用 `<type>(<scope>):<中文摘要>`，例如 `feat(ui):頁面更改`；`type`、`scope` 或摘要不確定時先查既有歷史，仍不確定就詢問使用者。
 - 每一次 `git push` 都要先提供分支、remote／ref、完整 commit SHA、diff 摘要、測試結果與風險給使用者審核。只有使用者明確批准該 SHA 與目標後才能推送一次；SHA、目標或參數改變就重新送審。
 - 使用者明確確認功能 SHA 審核完成後，Codex 的自主合併目標只能是 `develop`；合併後若要 push `develop`，仍要以新的 SHA 逐次送審。合併策略或 conflict 解法不明時停止詢問。
 - `main` 是正式分支，只能由使用者親自把 `develop` 合併進去；Codex 不執行任何功能分支／`develop` 到 `main` 的 merge 或 push。push 批准不等於發佈批准，tag／release、共享或 production 部署、套件發布仍須另行明確批准。

@@ -43,7 +43,7 @@
 3. 適用驗證達標，且失敗／未驗證項已明示。
 4. 沒有 placeholder、虛構工具、斷裂引用、未授權副作用或未處理的高風險假設。
 
-功能任務另有 Git gate：功能必須在獨立分支；沒有本次 SHA／remote／ref 的使用者批准就只能回報「待推送審核」。使用者確認確切功能 SHA review 完成後，Codex 只能自主合併到 `develop`；合併後的 `develop` push 仍須以新 SHA 送審。遠端 `develop` 就緒後狀態是「待使用者合併 main」，Codex 不得自行 merge／push `main`。完整狀態與證據見 `git-review-release-protocol.md`。
+功能任務另有 Git gate：功能必須在獨立分支；Codex 建立的一般 commit 必須符合 `<type>(<scope>):<中文摘要>`；沒有本次 SHA／remote／ref 的使用者批准就只能回報「待推送審核」。使用者確認確切功能 SHA review 完成後，Codex 只能自主合併到 `develop`；合併後的 `develop` push 仍須以新 SHA 送審。遠端 `develop` 就緒後狀態是「待使用者合併 main」，Codex 不得自行 merge／push `main`。完整狀態與證據見 `git-review-release-protocol.md`。
 
 ### 正例與反例
 

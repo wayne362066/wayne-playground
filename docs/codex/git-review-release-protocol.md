@@ -25,6 +25,25 @@
 
 反例：在 `develop` 直接修改 Lottery 與 Minecraft，最後用同一個分支一起推送。
 
+## Commit 訊息格式
+
+觸發：Codex 準備建立任何一般 commit。由 Git 或平台自動產生的 merge commit 不在此格式要求內；Codex 不得為了規避格式而刻意改用 merge commit。
+
+動作：
+
+1. 使用 `<type>(<scope>):<中文摘要>`，冒號後不加空格，例如 `feat(ui):頁面更改`。
+2. `type` 使用描述變更性質的小寫英文。此 repo 已觀察到 `feat` 與 `fix`；治理／純文件變更使用 `docs`。其他 type 若沒有現有歷史或任務性質可佐證，先詢問使用者，不自行創造。
+3. `scope` 使用可從變更檔案辨識的短模組或區域，例如 `ui`、`codex` 或現有模組名稱；一個 commit 橫跨多個無法用單一 scope 表示的目的時，先拆分 commit。
+4. 冒號後使用簡短中文摘要，直接說明完成的變更，不使用 `update files`、`misc changes` 或只有「調整」而沒有對象的模糊文字。
+
+驗證：建立 commit 前檢查訊息符合 `^[a-z]+\([^)]+\):[^[:space:]].+`，並人工確認冒號後摘要以中文說明實際變更。建立後用 `git log -1 --format=%s` read-back。
+
+停止條件：無法判斷 type、scope、commit 是否應拆分，或中文摘要會掩蓋多個不同目的時，不建立 commit；列出候選格式並詢問使用者。
+
+正例：`docs(codex):建立 Codex 作業規範`
+
+反例：`docs: establish Codex operating governance`，缺少 scope 且摘要不是中文。
+
 ## 每一次推送都要先審核
 
 觸發：任何會更新遠端 ref 的動作，包括第一次或後續 `git push`、tag push、force push、修正後再次 push。
@@ -34,6 +53,7 @@
 1. 不執行 push；先向使用者提供審核封包：
    - 本地分支、remote 與目標 ref。
    - 即將推送的完整 commit SHA。
+   - commit 訊息及其格式檢查結果。
    - 相對基底的 commit 清單、變更檔案與 diff 摘要。
    - 已執行的測試／build、exit code、未驗證項與風險。
 2. 明確詢問，且問題中必須逐字列出本次實際的完整 commit SHA、本地分支、remote 與目標 ref；不得留下代號或省略值。
