@@ -11,8 +11,8 @@ final class PowerLotterySimulator
     private const JACKPOT_COMBINATIONS = 22_085_448;
 
     private const PRIZES = [
-        'prize_1' => ['label' => '頭獎', 'matches' => 6, 'special' => true, 'amount' => 247_248_679],
-        'prize_2' => ['label' => '貳獎', 'matches' => 6, 'special' => false, 'amount' => 30_558_825],
+        'prize_1' => ['label' => '頭獎', 'matches' => 6, 'special' => true, 'amount' => 2_007_288_888],
+        'prize_2' => ['label' => '貳獎', 'matches' => 6, 'special' => false, 'amount' => 5_851_027],
         'prize_3' => ['label' => '參獎', 'matches' => 5, 'special' => true, 'amount' => 150_000],
         'prize_4' => ['label' => '肆獎', 'matches' => 5, 'special' => false, 'amount' => 20_000],
         'prize_5' => ['label' => '伍獎', 'matches' => 4, 'special' => true, 'amount' => 4_000],
