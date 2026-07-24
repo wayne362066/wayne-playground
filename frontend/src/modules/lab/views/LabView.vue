@@ -17,8 +17,8 @@
   margin-top: 56px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  border-top: 1px solid #d3d3c8;
-  border-left: 1px solid #d3d3c8;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
 }
 
 .lab-cell {
@@ -27,12 +27,14 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border-right: 1px solid #d3d3c8;
-  border-bottom: 1px solid #d3d3c8;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .lab-cell span {
-  color: #929a94;
+  color: var(--accent);
+  font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 0.7rem;
   font-weight: 800;
 }
@@ -40,7 +42,7 @@
 .lab-cell p {
   max-width: 160px;
   margin: 0;
-  color: #5d6962;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 

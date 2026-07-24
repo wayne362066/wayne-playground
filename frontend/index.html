@@ -4,7 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="個人工具、side projects 與技術實驗的模組化 Playground。" />
-    <meta name="theme-color" content="#f3f1e8" />
+    <meta name="theme-color" content="#f5f7fa" />
+    <script>
+      (() => {
+        const savedTheme = localStorage.getItem('wayne-theme')
+        const theme = savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        document.documentElement.dataset.theme = theme
+        document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#0a0f14' : '#f5f7fa'
+      })()
+    </script>
     <title>Wayne's Playground</title>
   </head>
   <body>

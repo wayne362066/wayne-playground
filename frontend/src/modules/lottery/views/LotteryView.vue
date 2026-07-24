@@ -1,195 +1,790 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import LotteryDraw from '../components/LotteryDraw.vue'
 import { useLotteryStore } from '../stores/lotteryStore'
 
-const count = ref(1)
+const modes = [
+  {
+    value: 'single',
+    number: '01',
+    title: '模擬一期',
+    description: '開出一組獎號，統計本期所有注數的獎項與損益。',
+  },
+  {
+    value: 'until_profit',
+    number: '02',
+    title: '直到單期獲利',
+    description: '逐期重抽，找出第一次當期獎金高於當期成本的結果。',
+  },
+  {
+    value: 'until_jackpot',
+    number: '03',
+    title: '直到中頭獎',
+    description: '依真實組合機率抽樣，估算要經過幾期才出現頭獎。',
+  },
+]
+
+const ticketCount = ref(10)
+const selectedMode = ref('single')
+const localError = ref('')
 const store = useLotteryStore()
-const { draws, generatedAt, loading, error } = storeToRefs(store)
+const { simulation, simulatedAt, loading, error } = storeToRefs(store)
+
+const selectedModeInfo = computed(
+  () => modes.find((mode) => mode.value === selectedMode.value),
+)
+
+const winningPrizes = computed(
+  () => simulation.value?.prizes.filter((prize) => prize.count > 0) || [],
+)
 
 const formattedTime = computed(() => {
-  if (!generatedAt.value) return ''
+  if (!simulatedAt.value) return ''
   return new Intl.DateTimeFormat('zh-TW', {
     dateStyle: 'medium',
-    timeStyle: 'medium',
-  }).format(new Date(generatedAt.value))
+    timeStyle: 'short',
+  }).format(new Date(simulatedAt.value))
 })
 
+const resultTone = computed(() => {
+  if (!simulation.value?.completed) return 'pending'
+  return simulation.value.net_profit >= 0 ? 'positive' : 'negative'
+})
+
+function formatNumber(value) {
+  return new Intl.NumberFormat('zh-TW').format(value ?? 0)
+}
+
+function formatMoney(value) {
+  return new Intl.NumberFormat('zh-TW', {
+    style: 'currency',
+    currency: 'TWD',
+    maximumFractionDigits: 0,
+  }).format(value ?? 0)
+}
+
 function submit() {
-  const normalizedCount = Number(count.value)
-  if (!Number.isInteger(normalizedCount) || normalizedCount < 1 || normalizedCount > 100) {
+  const normalizedCount = Number(ticketCount.value)
+  if (!Number.isInteger(normalizedCount) || normalizedCount < 1 || normalizedCount > 10000) {
+    localError.value = '每期購買注數必須是 1 到 10,000 的整數。'
     return
   }
-  store.generate(normalizedCount)
+
+  localError.value = ''
+  store.simulate(normalizedCount, selectedMode.value)
 }
 </script>
 
 <template>
-  <section class="container page-section">
-    <div class="lottery-intro">
-      <div>
-        <p class="eyebrow">Lottery / Power 6+1</p>
-        <h1 class="page-title">把隨機交給<br>程式。</h1>
-      </div>
-      <p class="page-lead">
-        第一區從 1–38 隨機取出 6 個不重複號碼，第二區從 1–8 取出 1 個號碼。純模擬，不代表任何中獎機率。
-      </p>
-    </div>
+  <section class="lottery-page">
+    <div class="container page-section">
+      <header class="lottery-hero">
+        <div class="hero-copy">
+          <p class="eyebrow">POWER LOTTERY / 6 + 1</p>
+          <h1 class="page-title">如果一直買，<br><em>會發生什麼？</em></h1>
+        </div>
+        <div class="hero-note">
+          <span class="note-rule" />
+          <p>
+            用程式重現威力彩開獎：第一區 1–38 選 6，第二區 1–8 選 1。
+            每注以 NT$100 計算，獎金沿用原始測試設定。
+          </p>
+          <small>純機率模擬，不構成投注建議。</small>
+        </div>
+      </header>
 
-    <form class="generator panel" @submit.prevent="submit">
-      <label for="count">
-        模擬組數
-        <span>最多 100 組</span>
-      </label>
-      <div class="controls">
-        <input id="count" v-model.number="count" type="number" min="1" max="100" step="1">
-        <button type="submit" :disabled="loading">
-          {{ loading ? '產生中…' : draws.length ? '重新產生' : '產生號碼' }}
-        </button>
-      </div>
-      <p v-if="error" class="form-error" role="alert">{{ error }}</p>
-    </form>
+      <form class="simulator panel" @submit.prevent="submit">
+        <div class="step-heading">
+          <span>STEP 01</span>
+          <div>
+            <h2>選擇模擬方式</h2>
+            <p>三種方式，共用同一套中獎規則。</p>
+          </div>
+        </div>
 
-    <section v-if="draws.length" class="results">
-      <div class="results-heading">
-        <h2>模擬結果</h2>
-        <span>{{ draws.length }} 組 · {{ formattedTime }}</span>
+        <div class="mode-grid">
+          <label
+            v-for="mode in modes"
+            :key="mode.value"
+            class="mode-card"
+            :class="{ active: selectedMode === mode.value }"
+          >
+            <input v-model="selectedMode" type="radio" name="mode" :value="mode.value">
+            <span class="mode-number">{{ mode.number }}</span>
+            <strong>{{ mode.title }}</strong>
+            <span class="mode-description">{{ mode.description }}</span>
+            <span class="radio-mark" aria-hidden="true" />
+          </label>
+        </div>
+
+        <div class="ticket-control">
+          <div>
+            <label for="ticket-count">每期購買注數</label>
+            <span>1–10,000 注</span>
+          </div>
+          <div class="input-row">
+            <div class="number-input">
+              <input
+                id="ticket-count"
+                v-model.number="ticketCount"
+                type="number"
+                min="1"
+                max="10000"
+                step="1"
+                inputmode="numeric"
+              >
+              <span>注 / 期</span>
+            </div>
+            <button type="submit" :disabled="loading">
+              <span>{{ loading ? '計算中…' : '開始模擬' }}</span>
+              <span aria-hidden="true">{{ loading ? '·' : '→' }}</span>
+            </button>
+          </div>
+          <p class="selection-hint">{{ selectedModeInfo.description }}</p>
+          <p v-if="localError || error" class="form-error" role="alert">
+            {{ localError || error }}
+          </p>
+        </div>
+      </form>
+
+      <section v-if="simulation" class="result-section" aria-live="polite">
+        <div class="result-heading">
+          <div>
+            <p class="eyebrow">SIMULATION RESULT</p>
+            <h2>這次的機率旅程</h2>
+          </div>
+          <span>{{ formattedTime }}</span>
+        </div>
+
+        <div class="result-grid">
+          <article class="result-summary panel" :class="resultTone">
+            <div class="summary-topline">
+              <span>{{ modes.find((mode) => mode.value === simulation.mode)?.title }}</span>
+              <span>{{ formatNumber(simulation.ticket_count) }} 注 / 期</span>
+            </div>
+            <p class="result-message">{{ simulation.message }}</p>
+            <div class="attempt-count">
+              <strong>{{ formatNumber(simulation.attempts) }}</strong>
+              <span>期</span>
+            </div>
+            <p v-if="simulation.mode === 'until_profit'" class="attempt-note">
+              {{ simulation.completed
+                ? `前面經過 ${formatNumber(simulation.losing_rounds)} 個未獲利期`
+                : `為控制運算量，本次最多模擬 ${formatNumber(simulation.maximum_attempts)} 期`
+              }}
+            </p>
+            <p v-if="simulation.calculation_method === 'geometric_distribution'" class="attempt-note">
+              依每注 1 / 22,085,448 的頭獎機率進行幾何分布抽樣，不以無上限迴圈占用伺服器。
+            </p>
+          </article>
+
+          <article class="winning-draw panel">
+            <div class="card-label">本次中獎號碼</div>
+            <div class="balls" aria-label="第一區中獎號碼">
+              <span
+                v-for="number in simulation.winning_numbers"
+                :key="number"
+                class="ball"
+              >{{ String(number).padStart(2, '0') }}</span>
+            </div>
+            <div class="special-row">
+              <span>第二區</span>
+              <span class="ball special">{{ String(simulation.winning_special).padStart(2, '0') }}</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="money-grid">
+          <article>
+            <span>總獎金</span>
+            <strong>{{ formatMoney(simulation.total_prize_money) }}</strong>
+          </article>
+          <article>
+            <span>{{ simulation.mode === 'until_jackpot' ? '累計花費' : '本期花費' }}</span>
+            <strong>{{ formatMoney(simulation.cost) }}</strong>
+          </article>
+          <article :class="resultTone">
+            <span>淨損益</span>
+            <strong>{{ simulation.net_profit > 0 ? '+' : '' }}{{ formatMoney(simulation.net_profit) }}</strong>
+          </article>
+        </div>
+
+        <article class="prize-panel panel">
+          <div class="prize-heading">
+            <div>
+              <span>PRIZE BREAKDOWN</span>
+              <h3>中獎明細</h3>
+            </div>
+            <strong>{{ formatNumber(simulation.total_prize_count) }} <small>注中獎</small></strong>
+          </div>
+
+          <div v-if="winningPrizes.length" class="prize-table">
+            <div v-for="prize in winningPrizes" :key="prize.key" class="prize-row">
+              <strong>{{ prize.label }}</strong>
+              <span>{{ formatNumber(prize.count) }} 注</span>
+              <span>每注 {{ formatMoney(prize.unit_prize) }}</span>
+              <strong>{{ formatMoney(prize.amount) }}</strong>
+            </div>
+          </div>
+          <div v-else class="no-prize">
+            <span aria-hidden="true">—</span>
+            <p>這一期沒有任何中獎注數。</p>
+          </div>
+        </article>
+      </section>
+
+      <div v-else class="pre-result">
+        <span>結果會顯示在這裡</span>
+        <div class="pre-result-line" />
       </div>
-      <div class="panel draws-list">
-        <LotteryDraw
-          v-for="(draw, index) in draws"
-          :key="`${generatedAt}-${index}`"
-          :draw="draw"
-          :index="index"
-        />
-      </div>
-    </section>
-    <div v-else class="empty-state">
-      <span aria-hidden="true">⚄</span>
-      <p>設定組數後，開始你的第一次模擬。</p>
     </div>
   </section>
 </template>
 
 <style scoped>
-.lottery-intro {
+.lottery-page {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 7% 15%, var(--accent-soft), transparent 28%),
+    transparent;
+}
+
+.lottery-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.65fr);
   align-items: end;
-  gap: 72px;
+  gap: 80px;
 }
 
-.generator {
-  margin-top: 48px;
-  padding: 24px;
+.page-title em {
+  color: var(--accent);
+  font-style: normal;
+  font-weight: inherit;
 }
 
-label {
+.hero-note {
+  padding-bottom: 6px;
+}
+
+.note-rule {
+  width: 42px;
+  height: 2px;
+  display: block;
+  margin-bottom: 20px;
+  background: var(--accent);
+}
+
+.hero-note p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.75;
+}
+
+.hero-note small {
+  display: block;
+  margin-top: 14px;
+  color: var(--text-faint);
+}
+
+.simulator {
+  margin-top: 56px;
+  padding: 34px;
+}
+
+.step-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.step-heading > span {
+  margin-top: 5px;
+  color: var(--accent);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.step-heading h2,
+.result-heading h2,
+.prize-heading h3 {
+  margin: 0;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+
+.step-heading h2 {
+  font-size: 1.7rem;
+}
+
+.step-heading p {
+  margin: 5px 0 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.mode-grid {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.mode-card {
+  position: relative;
+  min-height: 180px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.mode-card:hover {
+  transform: translateY(-2px);
+}
+
+.mode-card.active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.mode-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mode-number {
+  color: var(--accent);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+}
+
+.active .mode-number {
+  color: var(--accent);
+}
+
+.mode-card strong {
+  margin-top: 24px;
+  font-size: 1.05rem;
+}
+
+.mode-description {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.active .mode-description {
+  color: var(--text-muted);
+}
+
+.radio-mark {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+}
+
+.active .radio-mark {
+  border: 5px solid var(--accent);
+}
+
+.ticket-control {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+
+.ticket-control > div:first-child {
   display: flex;
   justify-content: space-between;
-  color: #283a31;
+}
+
+.ticket-control label {
   font-size: 0.88rem;
   font-weight: 800;
 }
 
-label span {
-  color: #7f8983;
-  font-weight: 500;
+.ticket-control > div:first-child span {
+  color: var(--text-faint);
+  font-size: 0.8rem;
 }
 
-.controls {
-  margin-top: 12px;
+.input-row {
+  margin-top: 10px;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 210px;
   gap: 12px;
 }
 
-input {
+.number-input {
   min-width: 0;
-  padding: 15px 16px;
-  border: 1px solid #cbd0ca;
-  border-radius: 12px;
-  color: #17221d;
-  background: #fff;
-  outline: none;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-strong);
 }
 
-input:focus {
-  border-color: #2b7456;
-  box-shadow: 0 0 0 3px rgba(43, 116, 86, 0.12);
+.number-input:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.number-input input {
+  min-width: 0;
+  flex: 1;
+  padding: 15px 16px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-weight: 800;
+}
+
+.number-input span {
+  padding-right: 16px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
 }
 
 button {
-  padding: 0 24px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   border: 0;
-  border-radius: 12px;
-  color: white;
-  background: #1f6348;
+  border-radius: var(--radius-md);
+  color: var(--accent-contrast);
+  background: var(--accent);
   font-weight: 800;
 }
 
 button:disabled {
   cursor: wait;
-  opacity: 0.6;
+  opacity: 0.65;
+}
+
+.selection-hint {
+  margin: 10px 0 0;
+  color: var(--text-faint);
+  font-size: 0.78rem;
 }
 
 .form-error {
-  margin: 12px 0 0;
-  color: #a23d37;
-  font-size: 0.88rem;
+  margin: 10px 0 0;
+  color: var(--danger);
+  font-size: 0.86rem;
 }
 
-.results {
-  margin-top: 48px;
+.result-section {
+  margin-top: 72px;
 }
 
-.results-heading {
-  margin-bottom: 14px;
+.result-heading {
+  margin-bottom: 18px;
   display: flex;
   align-items: end;
   justify-content: space-between;
+}
+
+.result-heading h2 {
+  font-size: 2.4rem;
+}
+
+.result-heading > span {
+  color: var(--text-faint);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
   gap: 16px;
 }
 
-.results-heading h2 {
-  margin: 0;
-  font-family: Georgia, serif;
+.result-summary,
+.winning-draw {
+  min-height: 300px;
+  padding: 28px;
+}
+
+.result-summary {
+  color: var(--on-result);
+  background: var(--result-positive);
+}
+
+.result-summary.negative {
+  background: var(--result-negative);
+}
+
+.result-summary.pending {
+  background: var(--result-pending);
+}
+
+.summary-topline {
+  display: flex;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, 0.67);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.result-message {
+  margin: 38px 0 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.attempt-count {
+  margin-top: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.attempt-count strong {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(3.3rem, 7vw, 5.5rem);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.attempt-count span {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.attempt-note {
+  max-width: 520px;
+  margin: 18px 0 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.winning-draw {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-label {
+  color: var(--text-muted);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.balls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.ball {
+  width: 47px;
+  height: 47px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--surface-strong);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-weight: 700;
+}
+
+.special-row {
+  padding-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.ball.special {
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.money-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--border);
+}
+
+.money-grid article {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+}
+
+.money-grid span {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.money-grid strong {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(1.25rem, 2.8vw, 2rem);
+  font-weight: 500;
+}
+
+.money-grid .positive strong {
+  color: var(--success);
+}
+
+.money-grid .negative strong {
+  color: var(--danger);
+}
+
+.prize-panel {
+  margin-top: 16px;
+  padding: 28px;
+}
+
+.prize-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.prize-heading span {
+  color: var(--accent);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.prize-heading h3 {
+  margin-top: 6px;
+  font-size: 1.8rem;
+}
+
+.prize-heading > strong {
+  color: var(--accent);
+  font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 2rem;
   font-weight: 500;
 }
 
-.results-heading span {
-  color: #77817a;
-  font-size: 0.8rem;
+.prize-heading small {
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 500;
 }
 
-.draws-list {
-  overflow: hidden;
+.prize-table {
+  margin-top: 22px;
+  border-top: 1px solid var(--border);
 }
 
-.empty-state {
-  min-height: 230px;
+.prize-row {
+  padding: 16px 0;
+  display: grid;
+  grid-template-columns: 1fr 0.8fr 1.4fr 1fr;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.86rem;
+}
+
+.prize-row > *:last-child {
+  text-align: right;
+}
+
+.prize-row span {
+  color: var(--text-muted);
+}
+
+.no-prize {
+  min-height: 130px;
   display: grid;
   place-content: center;
   justify-items: center;
-  color: #808a83;
-  text-align: center;
+  color: var(--text-faint);
 }
 
-.empty-state span {
-  color: #a5aca7;
-  font-family: Georgia, serif;
-  font-size: 2.6rem;
+.no-prize span {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 2rem;
 }
 
-@media (max-width: 760px) {
-  .lottery-intro {
+.no-prize p {
+  margin: 8px 0 0;
+}
+
+.pre-result {
+  margin-top: 52px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--text-faint);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pre-result-line {
+  height: 1px;
+  flex: 1;
+  background: var(--border);
+}
+
+@media (max-width: 800px) {
+  .lottery-hero,
+  .result-grid {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 28px;
   }
 
-  .controls {
+  .mode-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mode-card {
+    min-height: 145px;
+  }
+
+  .money-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 580px) {
+  .simulator,
+  .result-summary,
+  .winning-draw,
+  .prize-panel {
+    padding: 22px;
+  }
+
+  .input-row {
     grid-template-columns: 1fr;
   }
 
@@ -197,10 +792,23 @@ button:disabled {
     min-height: 50px;
   }
 
-  .results-heading {
+  .result-heading {
     align-items: flex-start;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
+  }
+
+  .result-summary,
+  .winning-draw {
+    min-height: 270px;
+  }
+
+  .prize-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .prize-row span:nth-child(3) {
+    display: none;
   }
 }
 </style>

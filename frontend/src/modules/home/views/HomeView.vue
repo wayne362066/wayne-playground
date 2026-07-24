@@ -49,8 +49,19 @@ onMounted(() => moduleStore.load())
 
 <style scoped>
 .hero {
-  padding: 96px 0 88px;
-  border-bottom: 1px solid #d8d7cd;
+  position: relative;
+  padding: 112px 0 96px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero::after {
+  position: absolute;
+  right: 8%;
+  bottom: -1px;
+  width: min(36vw, 440px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent));
+  content: "";
 }
 
 .hero-grid {
@@ -73,13 +84,14 @@ onMounted(() => moduleStore.load())
 
 .section-heading h2 {
   margin: 0;
-  font-family: Georgia, serif;
   font-size: clamp(1.9rem, 4vw, 2.8rem);
-  font-weight: 500;
+  font-weight: 650;
+  letter-spacing: -0.04em;
 }
 
 .section-heading > span {
-  color: #737e77;
+  color: var(--text-faint);
+  font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 0.85rem;
 }
 
@@ -91,8 +103,9 @@ onMounted(() => moduleStore.load())
 
 .skeleton {
   min-height: 340px;
-  border-radius: 20px;
-  background: linear-gradient(110deg, #e7e5dc 8%, #f1efe7 18%, #e7e5dc 33%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(110deg, var(--bg-subtle) 8%, var(--surface-strong) 18%, var(--bg-subtle) 33%);
   background-size: 200% 100%;
   animation: shine 1.4s linear infinite;
 }
@@ -100,7 +113,7 @@ onMounted(() => moduleStore.load())
 .notice button {
   margin-left: 12px;
   border: 0;
-  color: #8b302d;
+  color: var(--danger);
   background: transparent;
   font-weight: 800;
   text-decoration: underline;
@@ -112,7 +125,7 @@ onMounted(() => moduleStore.load())
 
 @media (max-width: 800px) {
   .hero {
-    padding: 64px 0;
+    padding: 72px 0 64px;
   }
 
   .hero-grid {

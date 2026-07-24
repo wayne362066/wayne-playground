@@ -16,16 +16,17 @@
 <style scoped>
 .tarot-page {
   min-height: calc(100vh - 145px);
-  color: #eee7d5;
-  background: #252838;
+  background:
+    radial-gradient(circle at 78% 34%, var(--accent-soft), transparent 24%),
+    transparent;
 }
 
 .eyebrow {
-  color: #c8ae75;
+  color: var(--accent);
 }
 
 .page-lead {
-  color: #bcbcc4;
+  color: var(--text-muted);
 }
 
 .card-placeholder {
@@ -34,10 +35,10 @@
   margin: 56px 0 0 auto;
   display: grid;
   place-items: center;
-  border: 1px solid #8d805e;
-  border-radius: 90px 90px 16px 16px;
-  box-shadow: inset 0 0 0 8px #252838, inset 0 0 0 9px #665d4a;
-  color: #d0b574;
+  border: 1px solid var(--accent);
+  border-radius: 90px 90px 14px 14px;
+  box-shadow: inset 0 0 0 8px var(--bg), inset 0 0 0 9px var(--border-strong), 0 0 44px var(--accent-soft);
+  color: var(--accent);
   font-size: 2.2rem;
 }
 </style>

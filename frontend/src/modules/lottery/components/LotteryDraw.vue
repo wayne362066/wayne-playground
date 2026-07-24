@@ -32,7 +32,7 @@ defineProps({
   grid-template-columns: 32px 1fr 1px auto;
   align-items: center;
   gap: 18px;
-  border-bottom: 1px solid #e0dfd7;
+  border-bottom: 1px solid var(--border);
 }
 
 .draw:last-child {
@@ -40,7 +40,7 @@ defineProps({
 }
 
 .draw-index {
-  color: #909992;
+  color: var(--text-faint);
   font-size: 0.72rem;
   font-weight: 800;
 }
@@ -56,16 +56,16 @@ defineProps({
   height: 42px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid #cdd3cc;
+  border: 1px solid var(--border-strong);
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface-strong);
   font-weight: 800;
 }
 
 .divider {
   width: 1px;
   height: 36px;
-  background: #d5d5cb;
+  background: var(--border);
 }
 
 .zone-two {
@@ -75,13 +75,13 @@ defineProps({
 }
 
 .zone-two small {
-  color: #7c867f;
+  color: var(--text-muted);
 }
 
 .ball.special {
   color: white;
-  border-color: #d2773f;
-  background: #d2773f;
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
 @media (max-width: 680px) {

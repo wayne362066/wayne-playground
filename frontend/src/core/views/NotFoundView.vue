@@ -12,9 +12,9 @@
   display: inline-block;
   margin-top: 32px;
   padding: 13px 18px;
-  border-radius: 999px;
-  color: white;
-  background: #1f6348;
+  border-radius: 10px;
+  color: var(--accent-contrast);
+  background: var(--accent);
   font-weight: 800;
   text-decoration: none;
 }

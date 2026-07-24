@@ -4,7 +4,7 @@ return [
     [
         'key' => 'lottery',
         'name' => '威力彩模擬器',
-        'description' => '隨機產生威力彩號碼，支援一次模擬多組。',
+        'description' => '模擬單期開獎、單期獲利與中頭獎所需期數。',
         'icon' => 'dice',
         'route' => '/lottery',
         'enabled' => true,
