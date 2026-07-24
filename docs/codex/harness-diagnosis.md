@@ -8,7 +8,7 @@
 
 ### 實際證據
 
-- `git status --short --branch` 顯示 `No commits yet on main`，並列出根目錄、`backend/`、`frontend/` 等檔案全為未追蹤；目前沒有可用的 commit 基線或 CI diff gate。
+- 初始診斷時 `git status --short --branch` 顯示 `No commits yet on main`；2026-07-24 後續查證已變更為 `develop...origin/develop`，HEAD `20420e8a0281cf1a547548302f80f53974515294` 可作修改前基線。Git 回復基線已具備，但仍沒有 CI diff gate。
 - 根目錄 `Makefile` 只有 `test`，其內容是 `docker compose exec php php artisan test`；沒有 root `build`、前端 build、lint、type-check 或 format 驗證 target。
 - README 的測試段落只有 `make test`，新增模組流程才額外提到 `npm run build`；兩者沒有被一個可重複的整合檢查串起來。
 - 已觀察到 `backend/vendor/`、`frontend/node_modules/`、`frontend/dist/` 與二進位 `frontend/src/assets/hero.png` 在工作區；若掃描或 diff 未排除生成物，結果容易失真。
@@ -16,7 +16,7 @@
 
 ### 原因
 
-目前「程式能跑」與「請求已完成」沒有明確的證據門檻。驗證依賴 Docker 執行環境與執行權限，且 Make target 只覆蓋後端整合入口；本次已在獲准條件下補到 Compose 測試證據，但普通 sandbox 仍可能阻塞。Git 尚無歷史也讓修改範圍、備份與回復狀態不透明。
+目前「程式能跑」與「請求已完成」沒有完整的自動證據門檻。驗證依賴 Docker 執行環境與執行權限，且 Make target 只覆蓋後端整合入口；本次已在獲准條件下補到 Compose 測試證據，但普通 sandbox 仍可能阻塞。Git 已有回復基線，但沒有 CI 自動阻止未驗證變更。
 
 ### 影響
 
@@ -103,6 +103,6 @@
 
 ## 查證限制
 
-- 根目錄尚無 commit，因此無法用歷史 diff 驗證修改前後差異；本次新增文件會以 `git status`、檔案 read-back 與 `git diff --no-index /dev/null` 方式檢查。
+- 根目錄現有可用 commit 基線；治理變更以修改前 HEAD、`git diff`、`git diff --check`、read-back 與引用檢查驗證。未來 session 必須重新取得當前 HEAD，不能沿用本次 SHA。
 - Docker daemon 與 Compose 後端測試已在獲准的 sandbox 外條件確認可用並通過；普通 sandbox 的直接 socket 權限、其他服務／網路情境與未來 session 狀態仍未確認。
 - 尚未確認是否存在未暴露於本工具清單的其他模型或正式委派語法；制度只引用已暴露的 `multi_agent_v1` 能力，並保留未確認標記。

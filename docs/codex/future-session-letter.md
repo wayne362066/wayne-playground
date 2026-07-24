@@ -6,7 +6,7 @@
 
 ## 三件使用者未提出，但現在最重要的事
 
-1. Git 尚無 commit，所有專案檔目前是未追蹤；先建立或由使用者確認一個 baseline，未來才有可靠 diff、回復與變更範圍。不要把建立 commit 當成預設授權。
+1. Git 現在有 `develop...origin/develop` 與可用 commit 基線。所有功能必須從使用者確認的 `develop` 基底建立獨立 `feature/` 分支；每次 push 都以精確 SHA／remote／ref 重新送審。功能審核完成後 Codex 最多只能自主合併至 `develop`，合併後的 `develop` push 仍要重新送審；正式 `main` 只由使用者親自合併。push、審核或整合批准都不等於發佈批准。
 2. `make test` 的 Docker Compose 路徑在普通 sandbox 會被 socket 權限阻塞；本輪已在獲准的 sandbox 外重跑並通過 6 tests／807 assertions。host `php artisan test` 仍不能單獨代表 PostgreSQL／Redis／Compose 整合通過；未來若普通 sandbox 再阻塞，先記錄錯誤並只在獲准條件下重跑正式入口。
 3. repo 沒有 CI、root lint/type-check/format 或統一跨 backend/frontend 驗證入口；不要把本次治理文件完成誤解成專案工程驗證已完善。若要補入口，先由使用者決定是否擴大到 Makefile／CI，並另立任務。
 
@@ -25,7 +25,7 @@
 - 本 session 的主模型名稱與 reasoning effort。
 - `multi_agent_v1` 的實際 concurrency 上限、agent 執行時的工作區隔離與跨 session 保留時間。
 - 普通 sandbox 是否能直接使用 Docker daemon；Docker CLI 已存在，但本 session 直接 socket 存取被拒絕，獲准外部條件可通過。
-- Composer 主機命令（未找到）、`gh`（未找到）、CI remote、Git remote 與任何正式 pipeline。
+- Composer 主機命令（未找到）、`gh`（未找到）、CI、remote 認證／寫入權限與任何正式 pipeline。
 - 磁碟上的 skill manifest 是否在下一 session 被載入／可呼叫；recommended plugins 是否會安裝與各 connector 是否已登入。
 - Codex thread／agent 狀態是否有 repo 之外的長期持久化；已確認的持久化只有這些 repo 文件。
 
@@ -35,8 +35,8 @@
 
 ## 未完成事項、原因與下一步
 
-- fresh-context 對抗審查：本輪以 `fork_context: false` 實際啟動兩次只讀 `multi_agent_v1` agent（agent ids `019f92d7-23e2-77d1-9cf8-3bd0974c9fab`、`019f92de-76aa-7721-9e81-19e04ecc5d80`），兩次都在回報前逾時並以 `close_agent` 關閉，沒有取得 findings；依相同策略失敗兩次規則已停止重試，不能把主模型機械自查當作獨立驗證。下一 session 使用 `adversarial-review-prompt.md` 重跑，最多兩輪修正。
-- Git baseline 與是否補充 root verification target：需要使用者授權／產品範圍決策，本輪不擅自改 Git 或 Makefile。
+- fresh-context 對抗審查：本輪以 `fork_context: false` 實際啟動兩次只讀 `multi_agent_v1` agent（agent ids `019f92d7-23e2-77d1-9cf8-3bd0974c9fab`、`019f92de-76aa-7721-9e81-19e04ecc5d80`），兩次都在回報前逾時並以 `close_agent` 關閉，沒有取得 findings；依相同策略失敗兩次規則已停止重試，不能把主模型機械自查當作獨立驗證。下一 session 使用 `adversarial-review-prompt.md` 重跑，並納入 `git-review-release-protocol.md`，最多兩輪修正。
+- 是否補充 root verification target：需要使用者授權／產品範圍決策，本輪不擅自改 Makefile。
 - 本輪沒有修改業務程式碼；若未來治理規則要求業務改動，另開任務並依 backend／frontend／跨層最低驗證。
 
 ## 明天開始的最短用法

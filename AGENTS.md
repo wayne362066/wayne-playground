@@ -15,12 +15,21 @@
    - 任務拆解、模型／subagent／失敗處理：`docs/codex/dispatch-playbook.md`
    - 是否完成、升級、詢問、換路與最低驗證：`docs/codex/decision-rubric.md`
    - 要派工時：`docs/codex/dispatch-templates.md`
+   - 功能實作、分支、推送審核與發佈：`docs/codex/git-review-release-protocol.md`
    - 修改制度或回寫教訓時：`docs/codex/maintenance-protocol.md`；歷史教訓按需讀 `docs/codex/lessons.md`
    - 本 repo harness 證據：`docs/codex/harness-diagnosis.md`
    - 收尾交接：`docs/codex/future-session-letter.md`
 3. 先寫清楚目標、範圍、禁止事項、完成條件，再執行；不因「順手」修改未授權的業務或流程。
 4. 工具命令失敗時記錄命令、exit code、錯誤與分類。權限／暫時問題只調整條件後重試一次；同策略第二次失敗必須換工具、輸入、分類或方案。推理／架構誤判要取得第二意見或升級，不得原樣重試。
 5. 完成只能以證據宣稱：列出實際變更、適用驗證命令與結果、未驗證／阻塞項。未執行、失敗或僅替代驗證的檢查不得寫成通過。
+
+## 功能、推送、發佈與不確定性 gate
+
+- 每個功能必須在獨立分支實作；開始改功能程式碼前確認基底、工作區與分支，不直接在 `main`、`master`、`develop` 或共用／發佈分支實作，也不在同一分支混入第二個功能。
+- 每一次 `git push` 都要先提供分支、remote／ref、完整 commit SHA、diff 摘要、測試結果與風險給使用者審核。只有使用者明確批准該 SHA 與目標後才能推送一次；SHA、目標或參數改變就重新送審。
+- 使用者明確確認功能 SHA 審核完成後，Codex 的自主合併目標只能是 `develop`；合併後若要 push `develop`，仍要以新的 SHA 逐次送審。合併策略或 conflict 解法不明時停止詢問。
+- `main` 是正式分支，只能由使用者親自把 `develop` 合併進去；Codex 不執行任何功能分支／`develop` 到 `main` 的 merge 或 push。push 批准不等於發佈批准，tag／release、共享或 production 部署、套件發布仍須另行明確批准。
+- 對需求、範圍、Git 狀態、工具結果、權限、審核或發佈有任何不確定時，先做一次可逆的針對性查證；仍不確定就停止會改變狀態的動作並直接詢問使用者，不得猜測、編造或把沉默視為批准。
 
 ## 掃描與 context 邊界
 
@@ -32,8 +41,8 @@
 
 - 新增或修改檔案後立即 read-back；確認檔案存在、引用路徑存在、沒有未替換的模板標記或虛構命令。
 - 有 Git 基線時跑 `git diff --check`；沒有基線時用 `git status --short`、目標檔案 read-back 與針對性 `rg` 檢查。驗證矩陣以 `docs/codex/decision-rubric.md` 為準。
-- 修改既有指示／治理檔前先保留未覆蓋的副本；備份放在 `docs/codex/archive/` 或工作區外的明確暫存路徑，不放在會被日常載入的指示位置，也不覆蓋舊備份。
+- 修改既有指示／治理檔前先確認是否由 Git 追蹤。已追蹤檔記錄修改前 commit 並保留清楚 diff；未追蹤檔建立不覆蓋的副本。副本放在 `docs/codex/archive/` 或工作區外的明確暫存路徑，不放在日常載入位置。
 
 ## 路由器驗證
 
-若這份入口或其引用被修改，收尾必須重新讀取 `AGENTS.md` 與所有被引用文件，執行 `rg -n 'docs/codex|AGENTS|make test|npm run build|php artisan test' AGENTS.md docs/codex`，並列出未確認能力。治理核心修改另須依使用者要求做 fresh-context 對抗審查，或留下 `docs/codex/adversarial-review-prompt.md` 供下一 session 執行。
+若這份入口或其引用被修改，收尾必須重新讀取 `AGENTS.md` 與所有被引用文件，執行 `rg -n 'docs/codex|AGENTS|git push|develop|main|合併|發佈|make test|npm run build|php artisan test' AGENTS.md docs/codex`，並列出未確認能力。治理核心修改另須依使用者要求做 fresh-context 對抗審查，或留下 `docs/codex/adversarial-review-prompt.md` 供下一 session 執行。
