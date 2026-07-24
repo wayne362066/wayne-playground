@@ -9,6 +9,7 @@
 - `AGENTS.md`
 - `docs/codex/dispatch-playbook.md`
 - `docs/codex/decision-rubric.md`
+- `docs/codex/git-review-release-protocol.md`
 - `docs/codex/maintenance-protocol.md`
 
 必要時讀 `docs/codex/harness-diagnosis.md`、`docs/codex/dispatch-templates.md`、`docs/codex/future-session-letter.md` 及上述文件實際引用的檔案。不要讀 `backend/vendor`、`frontend/node_modules`、`frontend/dist`、圖片、archive 或完整 generated output。
@@ -18,7 +19,7 @@
 - 不修改任何檔案、不安裝插件、不連外部服務、不執行資料刪除或重建。
 - 先確認所有目標檔案存在，再完整讀取目標文件；不可只抽查標題。
 - 對每個引用的路徑、命令、模型／effort、agent／connector 做可觀察核對；若只在文字中出現而當前工具／檔案沒有證據，標為未確認或虛構風險。
-- 特別找：入口與長文件的衝突；模糊的「高品質／視情況」；沒有停止條件的委派／驗證循環；把替代測試當成原測試；不相容的 backup／archive 路徑；永遠無法滿足的完成門檻；過度設計；對較弱模型需要隱性常識的步驟。
+- 特別找：入口與長文件的衝突；模糊的「高品質／視情況」；沒有停止條件的委派／驗證循環；把替代測試當成原測試；功能分支、每次 push 審核、審核後只整合至 `develop`、`main` 只由使用者親自合併或發佈批准可被繞過的路徑；把模糊回覆誤當批准；不相容的 backup／archive 路徑；永遠無法滿足的完成門檻；過度設計；對較弱模型需要隱性常識的步驟。
 
 驗收：
 

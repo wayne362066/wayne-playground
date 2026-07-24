@@ -13,6 +13,8 @@
 
 所有模板的長產物落在 `docs/codex/evidence/` 下的實際任務子目錄；只回傳路徑與摘要，不把整份長報告塞回主 context。
 
+任何會寫入功能行為的模板都必須先讀 `docs/codex/git-review-release-protocol.md`，確認主模型已把工作放在以 `develop` 為基底的獨立功能分支。agent 不得自行 push、merge、tag、release 或部署；主模型 review 後只可自主合併到 `develop`，`main` 必須由使用者親自合併。
+
 ## 搜尋／掃描
 
 ```text
@@ -55,20 +57,20 @@
 若要新增檔案，先列出路徑與用途；遇到未追蹤既有檔案先停止確認是否可覆蓋。
 
 必讀資料
-先讀：AGENTS.md、docs/codex/decision-rubric.md、{{目標 README／設定／程式／測試}}。
+先讀：AGENTS.md、docs/codex/decision-rubric.md、docs/codex/git-review-release-protocol.md、{{目標 README／設定／程式／測試}}。
 先查：git status --short、相關 package.json／composer.json／Makefile scripts。
 
 執行方式
-寫入集合與其他 agent 不重疊；若切片獨立可平行，明確說明各自寫入路徑。model／effort 預設省略並繼承 parent；只有當前 multi_agent schema 明列且有清楚理由才覆蓋。
+功能分支：{{feature/實際功能代號}}；`develop` 基底 commit：{{完整 SHA}}。主模型必須在寫入前確認此分支獨立且不在 main／master／develop／共用發佈分支。寫入集合與其他 agent 不重疊；若切片獨立可平行，明確說明各自寫入路徑。model／effort 預設省略並繼承 parent；只有當前 multi_agent schema 明列且有清楚理由才覆蓋。
 
 驗收與測試
 新增／修改後立即 read-back。backend 改動優先 make test；Docker 受阻時另跑 cd backend && php artisan test 並標示 Compose 未驗證。frontend 改動跑 cd frontend && npm run build。治理文件跑引用／placeholder／路徑檢查。記錄每個命令 exit code。
 
 停止及升級
-需求、API 契約、資料遷移、設計取捨或不可逆動作需要選擇時停止詢問；測試與假設矛盾時取得第二意見；同策略失敗兩次後換路，不得原樣重試。
+需求、API 契約、資料遷移、設計取捨、分支／基底、remote／ref、審核狀態或不可逆動作需要選擇時停止回報主模型，由主模型詢問使用者；測試與假設矛盾時取得第二意見；同策略失敗兩次後換路，不得原樣重試。禁止自行 push 或發佈。
 
 回報
-四欄回報；檔案列絕對或 repo-relative 路徑及關鍵行號；未驗證項不可寫成通過。
+四欄回報；檔案列絕對或 repo-relative 路徑及關鍵行號；未驗證項不可寫成通過。另列分支、基底 SHA、HEAD SHA 與審核狀態；沒有使用者批准時最多只能是「待推送審核」。
 ```
 
 ## 重構
@@ -132,7 +134,7 @@ AGENTS.md、docs/codex/decision-rubric.md、README 的架構／新增模組段�
 動機：主模型不能把自己寫的規則視為獨立驗證。
 
 範圍及禁止事項
-只讀：AGENTS.md、docs/codex/dispatch-playbook.md、docs/codex/decision-rubric.md、docs/codex/maintenance-protocol.md、{{其引用的必要文件}}。
+只讀：AGENTS.md、docs/codex/git-review-release-protocol.md、docs/codex/dispatch-playbook.md、docs/codex/decision-rubric.md、docs/codex/maintenance-protocol.md、{{其引用的必要文件}}。
 禁止：不修改檔案、不補洞、不安裝插件、不替主模型合理化矛盾；每個問題要指向實際行號。
 
 必讀資料
@@ -149,4 +151,79 @@ AGENTS.md、docs/codex/decision-rubric.md、README 的架構／新增模組段�
 
 回報
 四欄回報加 findings 清單；不要只說「看起來沒問題」。
+```
+
+## Push 審核封包
+
+```text
+請審核本次 push：
+- 功能：{{單一功能名稱與範圍}}
+- 本地分支：{{branch}}
+- 基底 commit：{{完整 base SHA}}
+- HEAD commit：{{完整 HEAD SHA}}
+- Remote／目標 ref：{{remote}}／{{remote ref}}
+- Commits：{{base..HEAD 的 commit 清單}}
+- Diff：{{變更檔案與統計；附可檢視路徑}}
+- 驗證：{{命令、exit code、通過／失敗／未驗證}}
+- 風險：{{未解風險；沒有則寫無}}
+
+是否批准把 commit {{完整 HEAD SHA}} 從 {{branch}} 推送到 {{remote}}/{{remote ref}}？
+
+本批准只適用上述 SHA、remote、ref 與本次 push；任一內容改變會重新送審。
+```
+
+## 發佈審核封包
+
+```text
+請審核本次發佈：
+- 功能：{{單一功能名稱與範圍}}
+- 候選 commit：{{完整 SHA}}
+- 已推送 ref／PR：{{可核對位置}}
+- 發佈目標：{{正式分支、release、tag、共享環境或 production}}
+- 發佈方式：{{確切命令／工具與主要參數}}
+- 驗證：{{命令、exit code、review 結果、失敗／未驗證項}}
+- 影響：{{使用者、資料、服務與停機影響}}
+- 回復方式：{{可執行回復步驟；不確定則停止詢問}}
+
+是否批准把 commit {{完整 SHA}} 以 {{發佈方式}} 發佈到 {{發佈目標}}？
+
+Push 批准不等於本次發佈批准；SHA、目標或方式改變會重新送審。
+正式 `main` 的 merge 不使用此封包要求 Codex 代執行；改用下方 main 手動合併交接，由使用者親自完成。
+```
+
+## Develop 自主合併檢核
+
+```text
+自主合併前檢核：
+- 功能：{{單一功能名稱與範圍}}
+- 已審核功能分支／SHA：{{branch}}／{{完整 SHA}}
+- 使用者確認 review 完成的訊息：{{可核對訊息摘要}}
+- 目標 develop SHA：{{合併前完整 SHA}}
+- 合併策略：{{repo 明文規範與來源；找不到則停止詢問}}
+- Review 意見：{{全部已解；否則停止}}
+- 功能分支驗證：{{命令、exit code、結果}}
+- 預期帶入 commits／檔案：{{清單}}
+
+只有以上內容一致且無 conflict，才可自主合併到本地 develop。不得改成 main 或其他分支。
+
+合併後：
+- 新 develop SHA：{{完整 SHA}}
+- 合併後驗證：{{命令、exit code、結果}}
+- 遠端差異：{{origin/develop..develop 的 commits／diff}}
+- 下一狀態：已合併 develop，待 push 審核
+```
+
+## Main 手動合併交接
+
+```text
+請使用者親自將 develop 合併到正式 main：
+- Develop ref／SHA：{{remote develop ref}}／{{完整 SHA}}
+- Main ref／SHA：{{remote main ref}}／{{目前完整 SHA}}
+- 相對 main 的 commits：{{commit 清單}}
+- Diff：{{變更檔案、統計與可檢視位置}}
+- 驗證：{{命令、exit code、結果}}
+- 未解風險：{{沒有則寫無}}
+- 建議合併方式：{{只引用 repo 明文慣例；沒有慣例就標未確認}}
+
+Codex 到此停止，不執行 merge／push main。使用者完成後，再以遠端 main SHA 或平台結果確認。
 ```
