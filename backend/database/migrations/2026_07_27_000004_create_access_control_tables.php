@@ -1,5 +1,6 @@
 <?php
 
+use App\Core\Access\PermissionCatalog;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -62,8 +63,9 @@ return new class extends Migration
 
         $now = now();
         $permissionIds = [];
+        $permissionDefinitions = app(PermissionCatalog::class)->all();
 
-        foreach (config('access.permissions', []) as $permission) {
+        foreach ($permissionDefinitions as $permission) {
             $id = (string) Str::ulid();
             $permissionIds[$permission['key']] = $id;
 
@@ -79,7 +81,6 @@ return new class extends Migration
         }
 
         $roleIds = [];
-        $allPermissionKeys = array_keys($permissionIds);
 
         foreach (config('access.roles', []) as $key => $role) {
             $id = (string) Str::ulid();
@@ -94,15 +95,18 @@ return new class extends Migration
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
+        }
 
-            $permissionKeys = $role['permissions'] === '*'
-                ? $allPermissionKeys
-                : $role['permissions'];
+        foreach ($permissionDefinitions as $permission) {
+            $roleKeys = array_values(array_unique([
+                ...$permission['default_roles'],
+                'admin',
+            ]));
 
-            foreach ($permissionKeys as $permissionKey) {
+            foreach ($roleKeys as $roleKey) {
                 DB::table('permission_role')->insert([
-                    'permission_id' => $permissionIds[$permissionKey],
-                    'role_id' => $id,
+                    'permission_id' => $permissionIds[$permission['key']],
+                    'role_id' => $roleIds[$roleKey],
                     'created_at' => $now,
                     'updated_at' => $now,
                 ]);

@@ -155,10 +155,11 @@ migration 執行時會把既有帳號指定為 `admin`，之後註冊的帳號�
 
 1. 在 `backend/app/Modules/Minecraft` 建立實際需要的 `Controllers`、`Services`、`Requests`、`Resources` 與 `Routes/api.php`。
 2. 在 `backend/config/modules.php` 增加 metadata；`key` 不可重複，並設定 `status` 與 `sort_order`。
-3. 若需要資料，將 migration 放在 `backend/database/migrations`，model 可放在模組的 `Models`。
-4. 在 `frontend/src/modules/minecraft` 建立 `views`、`components`、`services`、`stores`、`routes.js`。
-5. 將 routes 匯入 `frontend/src/core/router/index.js`。
-6. 新增 Feature 或 Unit Test，執行 `make test` 與 `npm run build`。
+3. 若模組需要權限，在 `backend/app/Modules/Minecraft/permissions.php` 回傳權限定義；執行 `php artisan db:seed --class=PermissionSeeder` 會自動發現並同步，新權限固定加入 `admin`，也可用 `default_roles` 指定首次建立時的 `guest`／`member`。
+4. 若需要資料，將 migration 放在 `backend/database/migrations`，model 可放在模組的 `Models`。
+5. 在 `frontend/src/modules/minecraft` 建立 `views`、`components`、`services`、`stores`、`routes.js`。
+6. 將 routes 匯入 `frontend/src/core/router/index.js`。
+7. 新增 Feature 或 Unit Test，執行 `make test` 與 `npm run build`。
 
 模組不可直接操作另一模組的內部類別。真正共用的內容移到 `Core`；若日後需要協作，優先使用明確介面或事件。
 
