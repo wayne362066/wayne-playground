@@ -25,11 +25,11 @@ class WishManagementController extends Controller
         return ApiResponse::success(WishResource::collection($wishes)->resolve());
     }
 
-    public function restore(string $publicId, WishEventRecorder $recorder): JsonResponse
+    public function restore(string $id, WishEventRecorder $recorder): JsonResponse
     {
         $wish = Wish::query()
             ->withTrashed()
-            ->where('public_id', $publicId)
+            ->whereKey($id)
             ->firstOrFail();
 
         Gate::authorize('restore', $wish);

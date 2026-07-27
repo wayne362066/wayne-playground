@@ -5,7 +5,7 @@ use App\Modules\Wishes\Controllers\WishManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/wish-management', [WishManagementController::class, 'index']);
-Route::post('/wish-management/{publicId}/restore', [WishManagementController::class, 'restore']);
+Route::post('/wish-management/{id}/restore', [WishManagementController::class, 'restore']);
 
 Route::get('/wishes', [WishController::class, 'index']);
 Route::post('/wishes', [WishController::class, 'store']);
