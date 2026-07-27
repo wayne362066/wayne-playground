@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -33,6 +34,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (NotFoundHttpException $exception, Request $request) {
             return $request->is('api/*')
                 ? ApiResponse::error('找不到指定的 API', 404)
+                : null;
+        });
+
+        $exceptions->render(function (AccessDeniedHttpException $exception, Request $request) {
+            return $request->is('api/*')
+                ? ApiResponse::error('沒有權限執行此操作', 403)
                 : null;
         });
 
