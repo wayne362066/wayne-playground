@@ -1,9 +1,11 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useAuthStore } from '../../auth/stores/authStore'
 import { useWishStore } from '../stores/wishStore'
 
 const wishStore = useWishStore()
+const authStore = useAuthStore()
 const { items, loading, saving, error, managementMode } = storeToRefs(wishStore)
 
 const editingId = ref('')
@@ -44,6 +46,14 @@ const filteredItems = computed(() => {
   if (statusFilter.value === 'all') return items.value
   return items.value.filter((wish) => wish.status === statusFilter.value)
 })
+
+const hasCardActions = computed(() => [
+  'wishes.update',
+  'wishes.status.update',
+  'wishes.moderate',
+  'wishes.archive',
+  'wishes.restore',
+].some((permission) => authStore.can(permission)))
 
 function emptyForm() {
   return {
@@ -87,19 +97,27 @@ async function submitWish() {
     author_name: form.author_type === 'anonymous' ? null : form.author_name,
   }
 
+  const updatePayload = { ...basePayload }
+
+  if (authStore.can('wishes.status.update')) {
+    updatePayload.status = form.status
+  }
+
+  if (authStore.can('wishes.moderate')) {
+    updatePayload.moderation_status = form.moderation_status
+    updatePayload.visibility = form.visibility
+  }
+
   const succeeded = editingId.value
-    ? await wishStore.update(editingId.value, {
-        ...basePayload,
-        status: form.status,
-        moderation_status: form.moderation_status,
-        visibility: form.visibility,
-      })
+    ? await wishStore.update(editingId.value, updatePayload)
     : await wishStore.create(basePayload)
 
   if (succeeded) resetForm()
 }
 
 async function toggleManagement() {
+  if (!authStore.can('wishes.manage.view')) return
+
   resetForm()
   statusFilter.value = 'all'
   await wishStore.load(!managementMode.value)
@@ -142,22 +160,32 @@ onMounted(() => wishStore.load(false))
   <section class="wish-hero">
     <div class="container hero-layout">
       <div>
-        <p class="eyebrow">Wish board / Local open mode</p>
+        <p class="eyebrow">Wish board / Permission aware</p>
         <h1 class="page-title">下一個想看見的，<br>先把它記下來。</h1>
       </div>
       <div class="hero-copy">
         <p class="page-lead">
-          留下一個功能、改善或實驗方向。現在是本地開放模式，願望送出後會立即公開。
+          留下一個功能、改善或實驗方向。公開投稿送出後會立即顯示，管理操作則依帳號權限開放。
         </p>
-        <button class="mode-button" type="button" @click="toggleManagement">
-          {{ managementMode ? '返回公開列表' : '本地管理檢視' }}
+        <button
+          v-if="authStore.can('wishes.manage.view')"
+          class="mode-button"
+          type="button"
+          @click="toggleManagement"
+        >
+          {{ managementMode ? '返回公開列表' : '管理檢視' }}
         </button>
       </div>
     </div>
   </section>
 
   <section class="container wish-workspace">
-    <form id="wish-form" class="panel wish-form" @submit.prevent="submitWish">
+    <form
+      v-if="authStore.can('wishes.create') || editingId"
+      id="wish-form"
+      class="panel wish-form"
+      @submit.prevent="submitWish"
+    >
       <div class="form-heading">
         <div>
           <p class="eyebrow">{{ editingId ? 'Edit wish' : 'Make a wish' }}</p>
@@ -211,7 +239,7 @@ onMounted(() => wishStore.load(false))
       </div>
 
       <div v-if="editingId" class="form-grid management-fields">
-        <label>
+        <label v-if="authStore.can('wishes.status.update')">
           規劃狀態
           <select v-model="form.status">
             <option v-for="(label, value) in statuses" :key="value" :value="value">
@@ -219,7 +247,7 @@ onMounted(() => wishStore.load(false))
             </option>
           </select>
         </label>
-        <label>
+        <label v-if="authStore.can('wishes.moderate')">
           審核狀態
           <select v-model="form.moderation_status">
             <option v-for="(label, value) in moderationStatuses" :key="value" :value="value">
@@ -227,7 +255,7 @@ onMounted(() => wishStore.load(false))
             </option>
           </select>
         </label>
-        <label>
+        <label v-if="authStore.can('wishes.moderate')">
           可見性
           <select v-model="form.visibility">
             <option v-for="(label, value) in visibilities" :key="value" :value="value">
@@ -298,7 +326,7 @@ onMounted(() => wishStore.load(false))
         </div>
 
         <div v-if="managementMode" class="card-management">
-          <label v-if="!wish.is_deleted">
+          <label v-if="!wish.is_deleted && authStore.can('wishes.status.update')">
             <span>狀態</span>
             <select
               :value="wish.status"
@@ -310,17 +338,38 @@ onMounted(() => wishStore.load(false))
               </option>
             </select>
           </label>
-          <div class="card-actions">
-            <button v-if="!wish.is_deleted" type="button" @click="editWish(wish)">編輯</button>
-            <button v-if="!wish.is_deleted" type="button" @click="toggleHidden(wish)">
+          <div v-if="hasCardActions" class="card-actions">
+            <button
+              v-if="!wish.is_deleted && authStore.can('wishes.update')"
+              type="button"
+              @click="editWish(wish)"
+            >
+              編輯
+            </button>
+            <button
+              v-if="!wish.is_deleted && authStore.can('wishes.moderate')"
+              type="button"
+              @click="toggleHidden(wish)"
+            >
               {{ wish.moderation_status === 'hidden' ? '恢復公開' : '隱藏' }}
             </button>
-            <button v-if="!wish.is_deleted" class="danger" type="button" @click="archiveWish(wish)">
+            <button
+              v-if="!wish.is_deleted && authStore.can('wishes.archive')"
+              class="danger"
+              type="button"
+              @click="archiveWish(wish)"
+            >
               軟刪除
             </button>
-            <button v-else type="button" @click="wishStore.restore(wish.id)">恢復</button>
+            <button
+              v-if="wish.is_deleted && authStore.can('wishes.restore')"
+              type="button"
+              @click="wishStore.restore(wish.id)"
+            >
+              恢復
+            </button>
           </div>
-          <details v-if="wish.events?.length">
+          <details v-if="authStore.can('wishes.history.view') && wish.events?.length">
             <summary>變更紀錄（{{ wish.events.length }}）</summary>
             <ul>
               <li v-for="(event, index) in wish.events" :key="`${event.created_at}-${index}`">

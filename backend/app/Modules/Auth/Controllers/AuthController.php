@@ -2,9 +2,11 @@
 
 namespace App\Modules\Auth\Controllers;
 
+use App\Core\Access\AuthorizationService;
 use App\Core\Http\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Modules\Access\Models\Role;
 use App\Modules\Auth\Requests\LoginRequest;
 use App\Modules\Auth\Requests\RegisterRequest;
 use App\Modules\Auth\Resources\AccountResource;
@@ -21,6 +23,9 @@ class AuthController extends Controller
             'username',
             'password',
         ]));
+        $user->roles()->attach(
+            Role::query()->where('key', 'member')->valueOrFail('id')
+        );
 
         Auth::login($user);
         $request->session()->regenerate();
@@ -61,6 +66,15 @@ class AuthController extends Controller
 
         return ApiResponse::success(
             $user ? (new AccountResource($user))->resolve() : null,
+        );
+    }
+
+    public function permissions(
+        Request $request,
+        AuthorizationService $authorization,
+    ): JsonResponse {
+        return ApiResponse::success(
+            $authorization->permissionsFor($request->user())->all()
         );
     }
 

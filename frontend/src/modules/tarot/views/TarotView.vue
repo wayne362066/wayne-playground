@@ -1,9 +1,11 @@
 <script setup>
 import { computed, nextTick, ref } from 'vue'
+import { useAuthStore } from '../../auth/stores/authStore'
 import { drawTarotCards } from '../data/tarotDeck'
 import { tarotDomains } from '../data/tarotQuestions'
 import { interpretTarotReading } from '../services/tarotInterpreter'
 
+const authStore = useAuthStore()
 const selectedDomain = ref(null)
 const currentQuestionIndex = ref(0)
 const answers = ref({})
@@ -108,7 +110,11 @@ function restart() {
         </p>
       </header>
 
-      <section v-if="stage !== 'result'" class="reading-flow panel">
+      <div v-if="!authStore.can('tarot.read')" class="notice">
+        你可以檢視這個模組，但目前沒有進行塔羅解讀的權限。
+      </div>
+
+      <section v-else-if="stage !== 'result'" class="reading-flow panel">
         <div class="flow-progress" aria-label="問答進度">
           <div class="progress-meta">
             <span>STEP {{ String(stage === 'ready' ? totalSteps : currentStep).padStart(2, '0') }}</span>

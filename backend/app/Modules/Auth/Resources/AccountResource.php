@@ -2,6 +2,7 @@
 
 namespace App\Modules\Auth\Resources;
 
+use App\Core\Access\AuthorizationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,6 +13,13 @@ class AccountResource extends JsonResource
         return [
             'id' => $this->id,
             'username' => $this->username,
+            'roles' => $this->roles()
+                ->orderBy('key')
+                ->pluck('key')
+                ->all(),
+            'permissions' => app(AuthorizationService::class)
+                ->permissionsFor($this->resource)
+                ->all(),
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

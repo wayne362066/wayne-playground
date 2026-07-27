@@ -1,7 +1,8 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
-import router from './core/router'
+import router, { installAccessGuard } from './core/router'
+import { setForbiddenHandler } from './core/api/http'
 import { useAuthStore } from './modules/auth/stores/authStore'
 import './style.css'
 
@@ -9,8 +10,16 @@ const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
-app.use(router)
 
 useAuthStore(pinia)
   .restore()
-  .finally(() => app.mount('#app'))
+  .finally(() => {
+    installAccessGuard(pinia)
+    setForbiddenHandler(() => {
+      if (router.currentRoute.value.name !== 'home') {
+        router.replace({ name: 'home' })
+      }
+    })
+    app.use(router)
+    app.mount('#app')
+  })

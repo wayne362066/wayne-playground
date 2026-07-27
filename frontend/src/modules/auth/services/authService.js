@@ -10,6 +10,11 @@ export async function fetchCurrentAccount() {
   return response.data.data
 }
 
+export async function fetchCurrentPermissions() {
+  const response = await http.get('/auth/permissions')
+  return response.data.data
+}
+
 export async function registerAccount(payload) {
   const csrfToken = await ensureCsrfCookie()
   const response = await http.post('/auth/register', payload, {

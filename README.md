@@ -127,24 +127,27 @@ make test
 │   ├── app/Core/                  # 共用 API、服務與基礎能力
 │   ├── app/Modules/
 │   │   ├── Home/                  # 模組清單
+│   │   ├── Access/                # 角色、權限與異動稽核
 │   │   ├── Lottery/               # 威力彩 API
 │   │   └── Wishes/                # 許願板 API、資料與權限邊界
 │   ├── config/modules.php
 │   └── database/                  # migrations / seeders
 ├── frontend/src/
 │   ├── core/                      # API、router、layout、共用頁面
-│   └── modules/                   # home / lottery / tarot / lab
+│   └── modules/                   # access / home / lottery / tarot / lab
 ├── docker/nginx/
 ├── docker/php/
 ├── docker-compose.yml
 └── Makefile
 ```
 
-## 許願板本地開放模式
+## 角色與細項權限
 
-許願板目前以本地使用為主，`WISH_ACCESS_MODE=open` 時任何人都可以投稿、編輯、調整狀態、隱藏、軟刪除與恢復。永久刪除未開放，所有規劃狀態、可見性及內容變更都會留下事件紀錄。
+系統以 `guest`、`member`、`admin` 三個系統角色起步，角色只是權限集合；後端 Policy 與 permission middleware 才是安全邊界。前端會依相同權限隱藏模組、路由與操作，API 收到未授權請求仍會回傳 `403`。
 
-一般列表只顯示公開且審核狀態為 `approved` 的願望；「本地管理檢視」會包含隱藏與軟刪除資料。未來加入登入與角色權限前，若要讓非本地環境停止開放操作，可將 `WISH_ACCESS_MODE` 改為 `restricted`。目前 restricted 模式採全部拒絕，需等身份功能完成後再接入 Policy 規則。
+migration 執行時會把既有帳號指定為 `admin`，之後註冊的帳號固定取得 `member`。管理員可在 `/admin/access` 建立自訂角色、調整角色權限、指派使用者角色及查看權限異動紀錄；系統會阻止移除最後一位具備 `access.manage` 的使用者。
+
+許願板仍允許訪客檢視公開內容與投稿，但管理檢視、內容編輯、狀態調整、審核、封存、恢復及事件歷史各自使用不同權限。
 
 ## 新增模組流程
 
@@ -152,10 +155,11 @@ make test
 
 1. 在 `backend/app/Modules/Minecraft` 建立實際需要的 `Controllers`、`Services`、`Requests`、`Resources` 與 `Routes/api.php`。
 2. 在 `backend/config/modules.php` 增加 metadata；`key` 不可重複，並設定 `status` 與 `sort_order`。
-3. 若需要資料，將 migration 放在 `backend/database/migrations`，model 可放在模組的 `Models`。
-4. 在 `frontend/src/modules/minecraft` 建立 `views`、`components`、`services`、`stores`、`routes.js`。
-5. 將 routes 匯入 `frontend/src/core/router/index.js`。
-6. 新增 Feature 或 Unit Test，執行 `make test` 與 `npm run build`。
+3. 若模組需要權限，在 `backend/app/Modules/Minecraft/permissions.php` 回傳權限定義；執行 `php artisan db:seed --class=PermissionSeeder` 會自動發現並同步，新權限固定加入 `admin`，也可用 `default_roles` 指定首次建立時的 `guest`／`member`。
+4. 若需要資料，將 migration 放在 `backend/database/migrations`，model 可放在模組的 `Models`。
+5. 在 `frontend/src/modules/minecraft` 建立 `views`、`components`、`services`、`stores`、`routes.js`。
+6. 將 routes 匯入 `frontend/src/core/router/index.js`。
+7. 新增 Feature 或 Unit Test，執行 `make test` 與 `npm run build`。
 
 模組不可直接操作另一模組的內部類別。真正共用的內容移到 `Core`；若日後需要協作，優先使用明確介面或事件。
 
