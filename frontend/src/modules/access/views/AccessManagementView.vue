@@ -1,7 +1,8 @@
 <script setup>
-import { computed, onMounted, reactive } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../../auth/stores/authStore'
+import PermissionChecklist from '../components/PermissionChecklist.vue'
 import { useAccessStore } from '../stores/accessStore'
 
 const accessStore = useAccessStore()
@@ -15,45 +16,28 @@ const {
   saving,
   error,
 } = storeToRefs(accessStore)
-const newRole = reactive({
-  key: '',
-  name: '',
-  description: '',
-  permission_keys: [],
-})
-
-const permissionGroups = computed(() => {
-  const groups = new Map()
-
-  for (const permission of permissions.value) {
-    if (!groups.has(permission.module)) groups.set(permission.module, [])
-    groups.get(permission.module).push(permission)
-  }
-
-  return [...groups.entries()].map(([key, items]) => ({ key, items }))
-})
+const selectedRoleId = ref('')
 
 const assignableRoles = computed(
   () => roles.value.filter((role) => role.key !== 'guest'),
 )
+const selectedRole = computed(
+  () => roles.value.find((role) => role.id === selectedRoleId.value) ?? null,
+)
 
-async function submitRole() {
-  const succeeded = await accessStore.createRole({
-    key: newRole.key,
-    name: newRole.name,
-    description: newRole.description || null,
-    permission_keys: newRole.permission_keys,
-  })
+watch(
+  roles,
+  (availableRoles) => {
+    const selectionExists = availableRoles.some(
+      (role) => role.id === selectedRoleId.value,
+    )
 
-  if (succeeded) {
-    Object.assign(newRole, {
-      key: '',
-      name: '',
-      description: '',
-      permission_keys: [],
-    })
-  }
-}
+    if (!selectionExists) {
+      selectedRoleId.value = availableRoles[0]?.id ?? ''
+    }
+  },
+  { immediate: true },
+)
 
 async function removeRole(role) {
   if (window.confirm(`確定刪除角色「${role.name}」嗎？`)) {
@@ -106,113 +90,62 @@ onMounted(() => accessStore.load())
       <section class="access-section">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">New role</p>
-            <h2>建立自訂角色</h2>
-          </div>
-        </div>
-
-        <form class="panel role-editor new-role" @submit.prevent="submitRole">
-          <div class="role-fields">
-            <label>
-              角色代碼
-              <input
-                v-model.trim="newRole.key"
-                placeholder="wish-reviewer"
-                maxlength="64"
-                required
-              >
-            </label>
-            <label>
-              顯示名稱
-              <input v-model.trim="newRole.name" maxlength="80" required>
-            </label>
-            <label class="wide-field">
-              說明
-              <input v-model.trim="newRole.description" maxlength="1000">
-            </label>
-          </div>
-
-          <div class="permission-groups">
-            <fieldset v-for="group in permissionGroups" :key="group.key">
-              <legend>{{ group.key }}</legend>
-              <label v-for="permission in group.items" :key="permission.key" class="check-row">
-                <input
-                  v-model="newRole.permission_keys"
-                  type="checkbox"
-                  :value="permission.key"
-                >
-                <span>
-                  <strong>{{ permission.name }}</strong>
-                  <small>{{ permission.key }}</small>
-                </span>
-              </label>
-            </fieldset>
-          </div>
-
-          <button class="primary-button" type="submit" :disabled="saving">
-            建立角色
-          </button>
-        </form>
-      </section>
-
-      <section class="access-section">
-        <div class="section-heading">
-          <div>
             <p class="eyebrow">Roles</p>
             <h2>角色權限</h2>
           </div>
-          <span>{{ roles.length }} 個角色</span>
+          <div class="heading-actions">
+            <span>{{ roles.length }} 個角色</span>
+            <RouterLink class="primary-button create-role-link" :to="{ name: 'access-role-create' }">
+              新增角色
+            </RouterLink>
+          </div>
         </div>
 
-        <div class="role-list">
-          <article v-for="role in roles" :key="role.id" class="panel role-editor">
-            <div class="role-title">
-              <div>
-                <span class="role-key">{{ role.key }}</span>
-                <input v-model.trim="role.name" maxlength="80">
-              </div>
-              <span>{{ role.user_count }} 位使用者</span>
-            </div>
-            <textarea
-              v-model.trim="role.description"
-              rows="2"
-              maxlength="1000"
-              placeholder="角色用途說明"
-            />
-
-            <div class="permission-groups">
-              <fieldset v-for="group in permissionGroups" :key="group.key">
-                <legend>{{ group.key }}</legend>
-                <label v-for="permission in group.items" :key="permission.key" class="check-row">
-                  <input
-                    v-model="role.permission_keys"
-                    type="checkbox"
-                    :value="permission.key"
-                  >
-                  <span>
-                    <strong>{{ permission.name }}</strong>
-                    <small>{{ permission.key }}</small>
-                  </span>
-                </label>
-              </fieldset>
-            </div>
-
-            <div class="editor-actions">
-              <button type="button" :disabled="saving" @click="saveRole(role)">
-                儲存權限
-              </button>
-              <button
-                v-if="!role.is_system"
-                class="danger"
-                type="button"
-                :disabled="saving"
-                @click="removeRole(role)"
-              >
-                刪除角色
-              </button>
-            </div>
-          </article>
+        <div class="role-selector">
+          <label for="role-select">選擇要管理的角色</label>
+          <select id="role-select" v-model="selectedRoleId">
+            <option v-for="role in roles" :key="role.id" :value="role.id">
+              {{ role.name }}（{{ role.key }}）
+            </option>
+          </select>
         </div>
+
+        <article v-if="selectedRole" class="panel role-editor">
+          <div class="role-title">
+            <div>
+              <span class="role-key">{{ selectedRole.key }}</span>
+              <input v-model.trim="selectedRole.name" maxlength="80">
+            </div>
+            <span>{{ selectedRole.user_count }} 位使用者</span>
+          </div>
+          <textarea
+            v-model.trim="selectedRole.description"
+            rows="2"
+            maxlength="1000"
+            placeholder="角色用途說明"
+          />
+
+          <PermissionChecklist
+            v-model="selectedRole.permission_keys"
+            :permissions="permissions"
+          />
+
+          <div class="editor-actions">
+            <button type="button" :disabled="saving" @click="saveRole(selectedRole)">
+              儲存權限
+            </button>
+            <button
+              v-if="!selectedRole.is_system"
+              class="danger"
+              type="button"
+              :disabled="saving"
+              @click="removeRole(selectedRole)"
+            >
+              刪除角色
+            </button>
+          </div>
+        </article>
+        <p v-else class="panel empty-copy">目前沒有可以管理的角色。</p>
       </section>
 
       <section class="access-section">
@@ -302,34 +235,63 @@ onMounted(() => accessStore.load())
   font-size: 2rem;
 }
 
-.section-heading > span {
+.heading-actions > span {
   color: var(--text-faint);
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 0.78rem;
+}
+
+.heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.create-role-link {
+  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .role-editor {
   padding: 24px;
 }
 
-.role-list {
+.role-selector {
+  margin-bottom: 18px;
+  padding: 18px 20px;
   display: grid;
-  gap: 18px;
+  grid-template-columns: minmax(180px, 0.35fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
 }
 
-.role-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+.role-selector label {
+  color: var(--text-muted);
+  font-weight: 750;
 }
 
-.wide-field {
-  grid-column: 1 / -1;
-}
-
-.role-fields label,
+.role-selector select,
 .role-editor > textarea {
   width: 100%;
+}
+
+.role-selector select {
+  padding: 11px 40px 11px 13px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--bg-elevated);
 }
 
 .role-title {
@@ -359,29 +321,6 @@ onMounted(() => accessStore.load())
 
 .role-editor > textarea {
   margin-top: 16px;
-}
-
-.permission-groups {
-  margin: 22px 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-fieldset {
-  min-width: 0;
-  padding: 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-}
-
-legend {
-  padding: 0 7px;
-  color: var(--accent);
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
 }
 
 .check-row {
@@ -493,24 +432,24 @@ legend {
   color: var(--text-muted);
 }
 
-@media (max-width: 900px) {
-  .permission-groups {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 720px) {
   .hero-grid,
-  .role-fields,
+  .role-selector,
   .user-grid {
     grid-template-columns: 1fr;
   }
 
+  .section-heading,
+  .heading-actions,
   .role-title,
   .role-title > div,
   .audit-list article {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .heading-actions {
+    gap: 10px;
   }
 }
 </style>
