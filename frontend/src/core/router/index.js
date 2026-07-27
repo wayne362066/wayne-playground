@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import authRoutes from '../../modules/auth/routes'
 import homeRoutes from '../../modules/home/routes'
 import lotteryRoutes from '../../modules/lottery/routes'
 import tarotRoutes from '../../modules/tarot/routes'
@@ -9,6 +10,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     ...homeRoutes,
+    ...authRoutes,
     ...lotteryRoutes,
     ...tarotRoutes,
     ...wishRoutes,

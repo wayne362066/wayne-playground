@@ -1,8 +1,10 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
+import { useAuthStore } from '../../modules/auth/stores/authStore'
 
 const theme = ref('light')
+const authStore = useAuthStore()
 let mediaQuery
 
 const isDark = computed(() => theme.value === 'dark')
@@ -19,6 +21,10 @@ function applyTheme(nextTheme, persist = true) {
 
 function toggleTheme() {
   applyTheme(isDark.value ? 'light' : 'dark')
+}
+
+async function logout() {
+  await authStore.logout()
 }
 
 function handleSystemTheme(event) {
@@ -51,6 +57,25 @@ onBeforeUnmount(() => mediaQuery?.removeEventListener('change', handleSystemThem
             <RouterLink to="/tarot">塔羅</RouterLink>
             <RouterLink to="/wishes">許願板</RouterLink>
           </nav>
+          <div class="account-actions">
+            <template v-if="authStore.user">
+              <span class="account-name">@{{ authStore.user.username }}</span>
+              <button
+                class="account-link"
+                type="button"
+                :disabled="authStore.loading"
+                @click="logout"
+              >
+                登出
+              </button>
+            </template>
+            <template v-else>
+              <RouterLink class="account-link" to="/login">登入</RouterLink>
+              <RouterLink class="account-link account-link-primary" to="/register">
+                註冊
+              </RouterLink>
+            </template>
+          </div>
           <button
             class="theme-toggle"
             type="button"
@@ -159,6 +184,53 @@ nav a.router-link-active::after {
   content: "";
 }
 
+.account-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.account-name {
+  max-width: 140px;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-link {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--text-muted);
+  background: transparent;
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.account-link:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.account-link-primary {
+  color: var(--accent-contrast);
+  background: var(--accent);
+}
+
+.account-link-primary:hover {
+  color: var(--accent-contrast);
+  background: var(--accent-strong);
+}
+
+.account-link:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .theme-toggle {
   width: 38px;
   height: 38px;
@@ -201,8 +273,24 @@ main {
     gap: 12px;
   }
 
+  nav a:not(:last-child) {
+    display: none;
+  }
+
   nav a:first-child {
     display: none;
+  }
+
+  .account-name {
+    display: none;
+  }
+
+  .account-actions {
+    gap: 2px;
+  }
+
+  .account-link {
+    padding: 7px;
   }
 
   .brand > span:last-child {

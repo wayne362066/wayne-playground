@@ -9,10 +9,18 @@ class ModuleServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        $routeFiles = glob(app_path('Modules/*/Routes/api.php')) ?: [];
+        $apiRouteFiles = glob(app_path('Modules/*/Routes/api.php')) ?: [];
 
-        foreach ($routeFiles as $routeFile) {
+        foreach ($apiRouteFiles as $routeFile) {
             Route::middleware('api')
+                ->prefix('api')
+                ->group($routeFile);
+        }
+
+        $webRouteFiles = glob(app_path('Modules/*/Routes/web.php')) ?: [];
+
+        foreach ($webRouteFiles as $routeFile) {
+            Route::middleware('web')
                 ->prefix('api')
                 ->group($routeFile);
         }

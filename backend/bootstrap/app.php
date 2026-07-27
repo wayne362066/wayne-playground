@@ -7,6 +7,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -41,6 +42,19 @@ return Application::configure(basePath: dirname(__DIR__))
             return $request->is('api/*')
                 ? ApiResponse::error('沒有權限執行此操作', 403)
                 : null;
+        });
+
+        $exceptions->render(function (HttpException $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            $status = $exception->getStatusCode();
+            $message = $status === 419
+                ? '頁面已過期，請重新操作'
+                : '請求無法完成';
+
+            return ApiResponse::error($message, $status);
         });
 
         $exceptions->render(function (Throwable $exception, Request $request) {
