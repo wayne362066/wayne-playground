@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useAuthStore } from '../../auth/stores/authStore'
 import { useLotteryStore } from '../stores/lotteryStore'
 
 const modes = [
@@ -28,6 +29,7 @@ const ticketCount = ref(10)
 const selectedMode = ref('single')
 const localError = ref('')
 const store = useLotteryStore()
+const authStore = useAuthStore()
 const { simulation, simulatedAt, loading, error } = storeToRefs(store)
 
 const selectedModeInfo = computed(
@@ -94,7 +96,11 @@ function submit() {
         </div>
       </header>
 
-      <form class="simulator panel" @submit.prevent="submit">
+      <form
+        v-if="authStore.can('lottery.simulate')"
+        class="simulator panel"
+        @submit.prevent="submit"
+      >
         <div class="step-heading">
           <span>STEP 01</span>
           <div>
@@ -147,6 +153,9 @@ function submit() {
           </p>
         </div>
       </form>
+      <div v-else class="notice">
+        你可以檢視這個模組，但目前沒有執行模擬的權限。
+      </div>
 
       <section v-if="simulation" class="result-section" aria-live="polite">
         <div class="result-heading">

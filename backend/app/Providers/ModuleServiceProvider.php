@@ -12,7 +12,7 @@ class ModuleServiceProvider extends ServiceProvider
         $apiRouteFiles = glob(app_path('Modules/*/Routes/api.php')) ?: [];
 
         foreach ($apiRouteFiles as $routeFile) {
-            Route::middleware('api')
+            Route::middleware(['web', 'api'])
                 ->prefix('api')
                 ->group($routeFile);
         }

@@ -70,9 +70,18 @@ class WishController extends Controller
         Wish $wish,
         WishEventRecorder $recorder,
     ): JsonResponse {
-        Gate::authorize('update', $wish);
-
         $data = $request->validated();
+        $contentFields = [
+            'title',
+            'description',
+            'category',
+            'author_type',
+            'author_name',
+        ];
+
+        if (array_intersect($contentFields, array_keys($data)) !== []) {
+            Gate::authorize('update', $wish);
+        }
 
         if (array_key_exists('status', $data) && $data['status'] !== $wish->status) {
             Gate::authorize('changeStatus', $wish);

@@ -1,11 +1,6 @@
 <?php
 
 return [
-    'access_mode' => env(
-        'WISH_ACCESS_MODE',
-        env('APP_ENV', 'production') === 'local' ? 'open' : 'restricted',
-    ),
-
     'categories' => [
         'feature',
         'improvement',

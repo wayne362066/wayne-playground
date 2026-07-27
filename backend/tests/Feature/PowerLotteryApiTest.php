@@ -2,13 +2,17 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class PowerLotteryApiTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_it_generates_the_requested_number_of_valid_draws(): void
     {
-        $response = $this->postJson('/api/lottery/power/generate', ['count' => 25]);
+        $response = $this->withCsrf()
+            ->postJson('/api/lottery/power/generate', ['count' => 25]);
 
         $response
             ->assertOk()
@@ -31,7 +35,8 @@ class PowerLotteryApiTest extends TestCase
     public function test_count_must_be_an_integer_between_one_and_one_hundred(): void
     {
         foreach ([null, 0, 101, 1.5, 'five'] as $count) {
-            $this->postJson('/api/lottery/power/generate', ['count' => $count])
+            $this->withCsrf()
+                ->postJson('/api/lottery/power/generate', ['count' => $count])
                 ->assertUnprocessable()
                 ->assertJsonPath('success', false)
                 ->assertJsonValidationErrors('count');
@@ -40,7 +45,7 @@ class PowerLotteryApiTest extends TestCase
 
     public function test_it_simulates_a_power_lottery_round(): void
     {
-        $response = $this->postJson('/api/lottery/power/simulate', [
+        $response = $this->withCsrf()->postJson('/api/lottery/power/simulate', [
             'ticket_count' => 20,
             'mode' => 'single',
         ]);
@@ -65,7 +70,7 @@ class PowerLotteryApiTest extends TestCase
 
     public function test_jackpot_mode_returns_a_statistically_sampled_attempt_count(): void
     {
-        $response = $this->postJson('/api/lottery/power/simulate', [
+        $response = $this->withCsrf()->postJson('/api/lottery/power/simulate', [
             'ticket_count' => 10000,
             'mode' => 'until_jackpot',
         ]);
@@ -82,7 +87,7 @@ class PowerLotteryApiTest extends TestCase
 
     public function test_profit_mode_finishes_within_its_ticket_evaluation_budget(): void
     {
-        $response = $this->postJson('/api/lottery/power/simulate', [
+        $response = $this->withCsrf()->postJson('/api/lottery/power/simulate', [
             'ticket_count' => 10000,
             'mode' => 'until_profit',
         ]);
@@ -106,7 +111,8 @@ class PowerLotteryApiTest extends TestCase
             $field = $payload['field'];
             unset($payload['field']);
 
-            $this->postJson('/api/lottery/power/simulate', $payload)
+            $this->withCsrf()
+                ->postJson('/api/lottery/power/simulate', $payload)
                 ->assertUnprocessable()
                 ->assertJsonValidationErrors($field);
         }

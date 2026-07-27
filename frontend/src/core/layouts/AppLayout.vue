@@ -1,10 +1,11 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useAuthStore } from '../../modules/auth/stores/authStore'
 
 const theme = ref('light')
 const authStore = useAuthStore()
+const router = useRouter()
 let mediaQuery
 
 const isDark = computed(() => theme.value === 'dark')
@@ -24,7 +25,9 @@ function toggleTheme() {
 }
 
 async function logout() {
-  await authStore.logout()
+  if (await authStore.logout()) {
+    await router.replace({ name: 'home' })
+  }
 }
 
 function handleSystemTheme(event) {
@@ -53,9 +56,18 @@ onBeforeUnmount(() => mediaQuery?.removeEventListener('change', handleSystemThem
         <div class="header-actions">
           <nav aria-label="主要導覽">
             <RouterLink to="/">首頁</RouterLink>
-            <RouterLink to="/lottery">威力彩</RouterLink>
-            <RouterLink to="/tarot">塔羅</RouterLink>
-            <RouterLink to="/wishes">許願板</RouterLink>
+            <RouterLink v-if="authStore.can('modules.lottery.view')" to="/lottery">
+              威力彩
+            </RouterLink>
+            <RouterLink v-if="authStore.can('modules.tarot.view')" to="/tarot">
+              塔羅
+            </RouterLink>
+            <RouterLink v-if="authStore.can('modules.wishes.view')" to="/wishes">
+              許願板
+            </RouterLink>
+            <RouterLink v-if="authStore.can('access.manage')" to="/admin/access">
+              權限管理
+            </RouterLink>
           </nav>
           <div class="account-actions">
             <template v-if="authStore.user">

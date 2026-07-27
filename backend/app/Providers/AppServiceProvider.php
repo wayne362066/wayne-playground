@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Core\Access\AuthorizationService;
 use App\Modules\Wishes\Models\Wish;
 use App\Modules\Wishes\Policies\WishPolicy;
 use Illuminate\Support\Facades\Gate;
@@ -14,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->scoped(AuthorizationService::class);
     }
 
     /**

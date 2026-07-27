@@ -45,6 +45,8 @@ class AuthApiTest extends TestCase
         $response
             ->assertCreated()
             ->assertJsonPath('data.username', 'wayne_01')
+            ->assertJsonPath('data.roles.0', 'member')
+            ->assertJsonFragment(['wishes.create'])
             ->assertJsonMissingPath('data.password');
 
         $user = User::query()->sole();
@@ -53,6 +55,7 @@ class AuthApiTest extends TestCase
         $this->assertTrue(Str::isUlid($user->id));
         $this->assertNotSame('safe-password', $user->getRawOriginal('password'));
         $this->assertTrue(Hash::check('safe-password', $user->password));
+        $this->assertSame(['member'], $user->roles()->pluck('key')->all());
         $this->assertAuthenticatedAs($user);
     }
 
@@ -95,7 +98,8 @@ class AuthApiTest extends TestCase
 
         $this->getJson('/api/auth/me')
             ->assertOk()
-            ->assertJsonPath('data.username', 'wayne');
+            ->assertJsonPath('data.username', 'wayne')
+            ->assertJsonPath('data.roles', []);
 
         $this->postJsonWithCsrf('/api/auth/logout')
             ->assertOk()
@@ -106,6 +110,10 @@ class AuthApiTest extends TestCase
         $this->getJson('/api/auth/me')
             ->assertOk()
             ->assertJsonPath('data', null);
+
+        $this->getJson('/api/auth/permissions')
+            ->assertOk()
+            ->assertJsonFragment(['wishes.view']);
     }
 
     public function test_login_does_not_reveal_which_credential_was_wrong(): void

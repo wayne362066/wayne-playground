@@ -47,9 +47,13 @@ class DomainUlidMigrationTest extends TestCase
 
     public function test_existing_domain_records_and_relationships_are_preserved_when_ids_become_ulids(): void
     {
+        $accessMigration = require database_path(
+            'migrations/2026_07_27_000004_create_access_control_tables.php'
+        );
         $migration = require database_path(
             'migrations/2026_07_27_000003_convert_domain_ids_to_ulids.php'
         );
+        $accessMigration->down();
         $migration->down();
 
         $wishUlid = (string) Str::ulid();
@@ -111,6 +115,7 @@ class DomainUlidMigrationTest extends TestCase
         ]);
 
         $migration->up();
+        $accessMigration->up();
 
         $user = User::query()->where('username', 'legacy-user')->sole();
         $wish = Wish::query()->where('title', 'Legacy wish')->sole();
@@ -128,5 +133,14 @@ class DomainUlidMigrationTest extends TestCase
         $this->assertSame($user->id, $wish->author->id);
         $this->assertSame($event->id, $wish->events->sole()->id);
         $this->assertFalse(Schema::hasColumn('wishes', 'public_id'));
+        $this->assertSame(
+            ['admin'],
+            $user->roles()->pluck('key')->all(),
+        );
+        $this->assertDatabaseHas('authorization_audits', [
+            'subject_type' => 'user',
+            'subject_id' => $user->id,
+            'action' => 'authorization.bootstrap_admin',
+        ]);
     }
 }
