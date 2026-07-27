@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import homeRoutes from '../../modules/home/routes'
 import lotteryRoutes from '../../modules/lottery/routes'
 import tarotRoutes from '../../modules/tarot/routes'
-import labRoutes from '../../modules/lab/routes'
+import wishRoutes from '../../modules/wishes/routes'
 import NotFoundView from '../views/NotFoundView.vue'
 
 const router = createRouter({
@@ -11,7 +11,7 @@ const router = createRouter({
     ...homeRoutes,
     ...lotteryRoutes,
     ...tarotRoutes,
-    ...labRoutes,
+    ...wishRoutes,
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',

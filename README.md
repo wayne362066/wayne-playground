@@ -1,6 +1,6 @@
 # Wayne's Playground
 
-一個可長期擴充的個人 Playground 平台，用來收集作品、Side Project、技術實驗與小型工具。第一版包含動態模組首頁、威力彩模擬器、塔羅占位頁及 Lab。
+一個可長期擴充的個人 Playground 平台，用來收集作品、Side Project、技術實驗與小型工具。目前包含動態模組首頁、威力彩模擬器、塔羅與可追蹤規劃狀態的許願板；Lab 程式碼暫時保留，但不顯示在介面與路由中。
 
 專案採 Modular Monolith：所有後端模組共用一個 Laravel 應用，所有前端模組共用一個 Vue 應用；模組各自維護路由與功能邏輯，避免拆成難以維護的微服務。
 
@@ -127,7 +127,8 @@ make test
 │   ├── app/Core/                  # 共用 API、服務與基礎能力
 │   ├── app/Modules/
 │   │   ├── Home/                  # 模組清單
-│   │   └── Lottery/               # 威力彩 API
+│   │   ├── Lottery/               # 威力彩 API
+│   │   └── Wishes/                # 許願板 API、資料與權限邊界
 │   ├── config/modules.php
 │   └── database/                  # migrations / seeders
 ├── frontend/src/
@@ -138,6 +139,12 @@ make test
 ├── docker-compose.yml
 └── Makefile
 ```
+
+## 許願板本地開放模式
+
+許願板目前以本地使用為主，`WISH_ACCESS_MODE=open` 時任何人都可以投稿、編輯、調整狀態、隱藏、軟刪除與恢復。永久刪除未開放，所有規劃狀態、可見性及內容變更都會留下事件紀錄。
+
+一般列表只顯示公開且審核狀態為 `approved` 的願望；「本地管理檢視」會包含隱藏與軟刪除資料。未來加入登入與角色權限前，若要讓非本地環境停止開放操作，可將 `WISH_ACCESS_MODE` 改為 `restricted`。目前 restricted 模式採全部拒絕，需等身份功能完成後再接入 Policy 規則。
 
 ## 新增模組流程
 

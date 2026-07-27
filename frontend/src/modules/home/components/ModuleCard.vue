@@ -10,6 +10,7 @@ const iconMap = {
   dice: '⚄',
   sparkles: '✦',
   flask: '⌁',
+  wish: '♡',
 }
 
 const statusLabels = {

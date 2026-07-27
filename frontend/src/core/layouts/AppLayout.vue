@@ -49,7 +49,7 @@ onBeforeUnmount(() => mediaQuery?.removeEventListener('change', handleSystemThem
             <RouterLink to="/">首頁</RouterLink>
             <RouterLink to="/lottery">威力彩</RouterLink>
             <RouterLink to="/tarot">塔羅</RouterLink>
-            <RouterLink to="/lab">Lab</RouterLink>
+            <RouterLink to="/wishes">許願板</RouterLink>
           </nav>
           <button
             class="theme-toggle"
