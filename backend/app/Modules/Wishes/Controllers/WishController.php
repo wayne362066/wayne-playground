@@ -12,7 +12,6 @@ use App\Modules\Wishes\Services\WishEventRecorder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class WishController extends Controller
@@ -41,7 +40,6 @@ class WishController extends Controller
         Gate::authorize('create', Wish::class);
 
         $data = $request->validated();
-        $data['public_id'] = (string) Str::ulid();
         $data['author_name'] = $data['author_type'] === 'anonymous'
             ? null
             : trim($data['author_name']);

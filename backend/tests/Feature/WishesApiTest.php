@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Modules\Wishes\Models\Wish;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class WishesApiTest extends TestCase
@@ -54,7 +55,7 @@ class WishesApiTest extends TestCase
     {
         $wish = $this->createWish();
 
-        $this->patchJson("/api/wishes/{$wish->public_id}", [
+        $this->patchJson("/api/wishes/{$wish->id}", [
             'status' => 'planned',
             'title' => '更新後的願望',
         ])->assertOk()
@@ -79,11 +80,11 @@ class WishesApiTest extends TestCase
         $hidden = $this->createWish(['title' => '隱藏願望']);
         $deleted = $this->createWish(['title' => '刪除願望']);
 
-        $this->patchJson("/api/wishes/{$hidden->public_id}", [
+        $this->patchJson("/api/wishes/{$hidden->id}", [
             'moderation_status' => 'hidden',
         ])->assertOk();
 
-        $this->deleteJson("/api/wishes/{$deleted->public_id}")
+        $this->deleteJson("/api/wishes/{$deleted->id}")
             ->assertOk();
 
         $this->getJson('/api/wishes')
@@ -94,7 +95,7 @@ class WishesApiTest extends TestCase
             ->assertOk()
             ->assertJsonCount(2, 'data');
 
-        $this->postJson("/api/wish-management/{$deleted->public_id}/restore")
+        $this->postJson("/api/wish-management/{$deleted->id}/restore")
             ->assertOk()
             ->assertJsonPath('data.is_deleted', false);
 
@@ -121,7 +122,7 @@ class WishesApiTest extends TestCase
             'author_name' => null,
         ]);
 
-        $this->patchJson("/api/wishes/{$wish->public_id}", [
+        $this->patchJson("/api/wishes/{$wish->id}", [
             'author_type' => 'guest',
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['author_name']);
@@ -139,8 +140,7 @@ class WishesApiTest extends TestCase
 
     private function createWish(array $attributes = []): Wish
     {
-        return Wish::query()->create(array_merge([
-            'public_id' => (string) str()->ulid(),
+        $wish = Wish::query()->create(array_merge([
             'title' => '測試願望',
             'description' => '測試內容',
             'category' => 'feature',
@@ -150,5 +150,9 @@ class WishesApiTest extends TestCase
             'author_type' => 'guest',
             'author_name' => '測試者',
         ], $attributes));
+
+        $this->assertTrue(Str::isUlid($wish->id));
+
+        return $wish;
     }
 }

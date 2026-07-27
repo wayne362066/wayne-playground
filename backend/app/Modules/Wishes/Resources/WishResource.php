@@ -10,7 +10,7 @@ class WishResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->public_id,
+            'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
             'category' => $this->category,

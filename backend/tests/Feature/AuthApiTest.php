@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -27,6 +28,10 @@ class AuthApiTest extends TestCase
         $this->assertFalse(Schema::hasColumn('users', 'email_verified_at'));
         $this->assertFalse(Schema::hasColumn('users', 'remember_token'));
         $this->assertFalse(Schema::hasTable('password_reset_tokens'));
+        $this->assertContains(
+            Schema::getColumnType('users', 'id'),
+            ['bpchar', 'string', 'varchar'],
+        );
     }
 
     public function test_a_visitor_can_register_without_storing_a_plaintext_password(): void
@@ -45,6 +50,7 @@ class AuthApiTest extends TestCase
         $user = User::query()->sole();
 
         $this->assertSame('wayne_01', $user->username);
+        $this->assertTrue(Str::isUlid($user->id));
         $this->assertNotSame('safe-password', $user->getRawOriginal('password'));
         $this->assertTrue(Hash::check('safe-password', $user->password));
         $this->assertAuthenticatedAs($user);
