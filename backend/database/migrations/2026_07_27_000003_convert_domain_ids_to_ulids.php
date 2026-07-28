@@ -14,10 +14,11 @@ return new class extends Migration
         $wishIds = [];
 
         Schema::create('users_ulid', function (Blueprint $table): void {
-            $table->ulid('id')->primary();
-            $table->string('username', 32)->unique();
-            $table->string('password');
-            $table->timestamps();
+            $table->ulid('id')->primary()->comment('使用者 ULID 主鍵');
+            $table->string('username', 32)->unique()->comment('使用者登入帳號');
+            $table->string('password')->comment('雜湊後的登入密碼');
+            $table->timestamp('created_at')->nullable()->comment('資料建立時間');
+            $table->timestamp('updated_at')->nullable()->comment('資料最後更新時間');
         });
 
         foreach (DB::table('users')->orderBy('id')->get() as $user) {
@@ -34,12 +35,12 @@ return new class extends Migration
         }
 
         Schema::create('sessions_ulid', function (Blueprint $table): void {
-            $table->string('id')->primary();
-            $table->foreignUlid('user_id')->nullable()->index();
-            $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable();
-            $table->longText('payload');
-            $table->integer('last_activity')->index();
+            $table->string('id')->primary()->comment('Session 唯一識別碼');
+            $table->foreignUlid('user_id')->nullable()->index()->comment('登入使用者 ULID');
+            $table->string('ip_address', 45)->nullable()->comment('Session 來源 IP 位址');
+            $table->text('user_agent')->nullable()->comment('Session 瀏覽器識別資訊');
+            $table->longText('payload')->comment('序列化後的 Session 內容');
+            $table->integer('last_activity')->index()->comment('最後活動時間的 Unix timestamp');
         });
 
         foreach (DB::table('sessions')->get() as $session) {
@@ -56,16 +57,17 @@ return new class extends Migration
         }
 
         Schema::create('modules_ulid', function (Blueprint $table): void {
-            $table->ulid('id')->primary();
-            $table->string('key')->unique();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->string('icon')->nullable();
-            $table->string('route');
-            $table->boolean('enabled')->default(true);
-            $table->string('status')->default('active');
-            $table->unsignedInteger('sort_order')->default(0);
-            $table->timestamps();
+            $table->ulid('id')->primary()->comment('模組 ULID 主鍵');
+            $table->string('key')->unique()->comment('程式使用的模組唯一鍵');
+            $table->string('name')->comment('模組顯示名稱');
+            $table->text('description')->nullable()->comment('模組用途說明');
+            $table->string('icon')->nullable()->comment('前端顯示使用的圖示鍵');
+            $table->string('route')->comment('模組前端入口路徑');
+            $table->boolean('enabled')->default(true)->comment('是否開放顯示與使用模組');
+            $table->string('status')->default('active')->comment('模組目前生命週期狀態');
+            $table->unsignedInteger('sort_order')->default(0)->comment('模組顯示排序值');
+            $table->timestamp('created_at')->nullable()->comment('資料建立時間');
+            $table->timestamp('updated_at')->nullable()->comment('資料最後更新時間');
         });
 
         foreach (DB::table('modules')->orderBy('id')->get() as $module) {
@@ -85,21 +87,23 @@ return new class extends Migration
         }
 
         Schema::create('wishes_ulid', function (Blueprint $table): void {
-            $table->ulid('id')->primary();
-            $table->string('title', 120);
-            $table->text('description')->nullable();
-            $table->string('category', 32)->default('feature');
-            $table->string('status', 32)->default('submitted');
-            $table->string('moderation_status', 32)->default('approved');
-            $table->string('visibility', 32)->default('public');
+            $table->ulid('id')->primary()->comment('願望 ULID 主鍵');
+            $table->string('title', 120)->comment('願望標題');
+            $table->text('description')->nullable()->comment('願望詳細說明');
+            $table->string('category', 32)->default('feature')->comment('願望分類');
+            $table->string('status', 32)->default('submitted')->comment('願望處理進度狀態');
+            $table->string('moderation_status', 32)->default('approved')->comment('願望內容審核狀態');
+            $table->string('visibility', 32)->default('public')->comment('願望可見範圍');
             $table->foreignUlid('author_id')
                 ->nullable()
+                ->comment('投稿者使用者 ULID')
                 ->constrained('users_ulid')
                 ->nullOnDelete();
-            $table->string('author_type', 32)->default('guest');
-            $table->string('author_name', 80)->nullable();
-            $table->softDeletes();
-            $table->timestamps();
+            $table->string('author_type', 32)->default('guest')->comment('投稿者身分類型');
+            $table->string('author_name', 80)->nullable()->comment('投稿時顯示的名稱');
+            $table->softDeletes()->comment('願望軟刪除時間');
+            $table->timestamp('created_at')->nullable()->comment('資料建立時間');
+            $table->timestamp('updated_at')->nullable()->comment('資料最後更新時間');
 
             $table->index(['moderation_status', 'visibility', 'created_at']);
             $table->index(['status', 'category']);
@@ -131,15 +135,17 @@ return new class extends Migration
         }
 
         Schema::create('wish_events_ulid', function (Blueprint $table): void {
-            $table->ulid('id')->primary();
+            $table->ulid('id')->primary()->comment('願望事件 ULID 主鍵');
             $table->foreignUlid('wish_id')
+                ->comment('事件所屬願望 ULID')
                 ->constrained('wishes_ulid')
                 ->cascadeOnDelete();
-            $table->string('event_type', 40);
-            $table->string('from_value')->nullable();
-            $table->string('to_value')->nullable();
-            $table->json('metadata')->nullable();
-            $table->timestamps();
+            $table->string('event_type', 40)->comment('願望事件類型');
+            $table->string('from_value')->nullable()->comment('事件變更前的值');
+            $table->string('to_value')->nullable()->comment('事件變更後的值');
+            $table->json('metadata')->nullable()->comment('事件額外結構化資訊');
+            $table->timestamp('created_at')->nullable()->comment('資料建立時間');
+            $table->timestamp('updated_at')->nullable()->comment('資料最後更新時間');
 
             $table->index(['wish_id', 'created_at']);
         });
@@ -176,10 +182,11 @@ return new class extends Migration
         $wishIds = [];
 
         Schema::create('users_integer', function (Blueprint $table): void {
-            $table->id();
-            $table->string('username', 32)->unique();
-            $table->string('password');
-            $table->timestamps();
+            $table->id()->comment('使用者流水號主鍵');
+            $table->string('username', 32)->unique()->comment('使用者登入帳號');
+            $table->string('password')->comment('雜湊後的登入密碼');
+            $table->timestamp('created_at')->nullable()->comment('資料建立時間');
+            $table->timestamp('updated_at')->nullable()->comment('資料最後更新時間');
         });
 
         foreach (DB::table('users')->orderBy('id')->get()->values() as $index => $user) {
@@ -196,12 +203,12 @@ return new class extends Migration
         }
 
         Schema::create('sessions_integer', function (Blueprint $table): void {
-            $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
-            $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable();
-            $table->longText('payload');
-            $table->integer('last_activity')->index();
+            $table->string('id')->primary()->comment('Session 唯一識別碼');
+            $table->foreignId('user_id')->nullable()->index()->comment('登入使用者流水號');
+            $table->string('ip_address', 45)->nullable()->comment('Session 來源 IP 位址');
+            $table->text('user_agent')->nullable()->comment('Session 瀏覽器識別資訊');
+            $table->longText('payload')->comment('序列化後的 Session 內容');
+            $table->integer('last_activity')->index()->comment('最後活動時間的 Unix timestamp');
         });
 
         foreach (DB::table('sessions')->get() as $session) {
@@ -218,16 +225,17 @@ return new class extends Migration
         }
 
         Schema::create('modules_integer', function (Blueprint $table): void {
-            $table->id();
-            $table->string('key')->unique();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->string('icon')->nullable();
-            $table->string('route');
-            $table->boolean('enabled')->default(true);
-            $table->string('status')->default('active');
-            $table->unsignedInteger('sort_order')->default(0);
-            $table->timestamps();
+            $table->id()->comment('模組流水號主鍵');
+            $table->string('key')->unique()->comment('程式使用的模組唯一鍵');
+            $table->string('name')->comment('模組顯示名稱');
+            $table->text('description')->nullable()->comment('模組用途說明');
+            $table->string('icon')->nullable()->comment('前端顯示使用的圖示鍵');
+            $table->string('route')->comment('模組前端入口路徑');
+            $table->boolean('enabled')->default(true)->comment('是否開放顯示與使用模組');
+            $table->string('status')->default('active')->comment('模組目前生命週期狀態');
+            $table->unsignedInteger('sort_order')->default(0)->comment('模組顯示排序值');
+            $table->timestamp('created_at')->nullable()->comment('資料建立時間');
+            $table->timestamp('updated_at')->nullable()->comment('資料最後更新時間');
         });
 
         foreach (DB::table('modules')->orderBy('id')->get()->values() as $index => $module) {
@@ -247,22 +255,24 @@ return new class extends Migration
         }
 
         Schema::create('wishes_integer', function (Blueprint $table): void {
-            $table->id();
-            $table->ulid('public_id')->unique();
-            $table->string('title', 120);
-            $table->text('description')->nullable();
-            $table->string('category', 32)->default('feature');
-            $table->string('status', 32)->default('submitted');
-            $table->string('moderation_status', 32)->default('approved');
-            $table->string('visibility', 32)->default('public');
+            $table->id()->comment('願望流水號主鍵');
+            $table->ulid('public_id')->unique()->comment('對外公開使用的願望 ULID');
+            $table->string('title', 120)->comment('願望標題');
+            $table->text('description')->nullable()->comment('願望詳細說明');
+            $table->string('category', 32)->default('feature')->comment('願望分類');
+            $table->string('status', 32)->default('submitted')->comment('願望處理進度狀態');
+            $table->string('moderation_status', 32)->default('approved')->comment('願望內容審核狀態');
+            $table->string('visibility', 32)->default('public')->comment('願望可見範圍');
             $table->foreignId('author_id')
                 ->nullable()
+                ->comment('投稿者使用者流水號')
                 ->constrained('users_integer')
                 ->nullOnDelete();
-            $table->string('author_type', 32)->default('guest');
-            $table->string('author_name', 80)->nullable();
-            $table->softDeletes();
-            $table->timestamps();
+            $table->string('author_type', 32)->default('guest')->comment('投稿者身分類型');
+            $table->string('author_name', 80)->nullable()->comment('投稿時顯示的名稱');
+            $table->softDeletes()->comment('願望軟刪除時間');
+            $table->timestamp('created_at')->nullable()->comment('資料建立時間');
+            $table->timestamp('updated_at')->nullable()->comment('資料最後更新時間');
 
             $table->index(['moderation_status', 'visibility', 'created_at']);
             $table->index(['status', 'category']);
@@ -293,15 +303,17 @@ return new class extends Migration
         }
 
         Schema::create('wish_events_integer', function (Blueprint $table): void {
-            $table->id();
+            $table->id()->comment('願望事件流水號主鍵');
             $table->foreignId('wish_id')
+                ->comment('事件所屬願望流水號')
                 ->constrained('wishes_integer')
                 ->cascadeOnDelete();
-            $table->string('event_type', 40);
-            $table->string('from_value')->nullable();
-            $table->string('to_value')->nullable();
-            $table->json('metadata')->nullable();
-            $table->timestamps();
+            $table->string('event_type', 40)->comment('願望事件類型');
+            $table->string('from_value')->nullable()->comment('事件變更前的值');
+            $table->string('to_value')->nullable()->comment('事件變更後的值');
+            $table->json('metadata')->nullable()->comment('事件額外結構化資訊');
+            $table->timestamp('created_at')->nullable()->comment('資料建立時間');
+            $table->timestamp('updated_at')->nullable()->comment('資料最後更新時間');
 
             $table->index(['wish_id', 'created_at']);
         });
