@@ -67,11 +67,17 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             $status = $exception->getStatusCode();
-            $message = $status === 419
-                ? '頁面已過期，請重新操作'
-                : '請求無法完成';
+            $headers = $exception->getHeaders();
+            $message = match ($status) {
+                419 => '頁面已過期，請重新操作',
+                429 => sprintf(
+                    '操作太頻繁，請在 %d 秒後再試',
+                    max(1, (int) ($headers['Retry-After'] ?? 60)),
+                ),
+                default => '請求無法完成',
+            };
 
-            return ApiResponse::error($message, $status);
+            return ApiResponse::error($message, $status)->withHeaders($headers);
         });
 
         $exceptions->render(function (Throwable $exception, Request $request) {

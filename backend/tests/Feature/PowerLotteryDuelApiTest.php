@@ -376,6 +376,48 @@ class PowerLotteryDuelApiTest extends TestCase
             ->assertJsonValidationErrors(['nickname', 'ticket_count', 'mode']);
     }
 
+    public function test_create_room_rate_limit_is_per_participant_and_returns_retry_time(): void
+    {
+        for ($attempt = 1; $attempt <= 20; $attempt++) {
+            $response = $this->asGuest('busy-player')
+                ->postJson('/api/lottery/duels', [
+                    'nickname' => '測試玩家',
+                    'ticket_count' => 10,
+                    'mode' => 'single',
+                ]);
+
+            $attempt === 1
+                ? $response->assertCreated()
+                : $response->assertConflict();
+        }
+
+        $limited = $this->asGuest('busy-player')
+            ->postJson('/api/lottery/duels', [
+                'nickname' => '測試玩家',
+                'ticket_count' => 10,
+                'mode' => 'single',
+            ])
+            ->assertTooManyRequests()
+            ->assertHeader('Retry-After');
+
+        $this->assertStringContainsString(
+            '操作太頻繁，請在',
+            $limited->json('message'),
+        );
+        $this->assertStringContainsString(
+            '秒後再試',
+            $limited->json('message'),
+        );
+
+        $this->asGuest('another-player')
+            ->postJson('/api/lottery/duels', [
+                'nickname' => '另一位玩家',
+                'ticket_count' => 10,
+                'mode' => 'single',
+            ])
+            ->assertCreated();
+    }
+
     private function createJoinedRoom(): array
     {
         $room = $this->asGuest('host')

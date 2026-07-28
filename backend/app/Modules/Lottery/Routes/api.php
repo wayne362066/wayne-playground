@@ -15,7 +15,7 @@ Route::prefix('/lottery/duels')
         Route::get('/', [PowerLotteryDuelController::class, 'index']);
         Route::get('/current', [PowerLotteryDuelController::class, 'current']);
         Route::post('/', [PowerLotteryDuelController::class, 'store'])
-            ->middleware('throttle:10,1');
+            ->middleware('throttle:lottery-duel-create');
         Route::get('/{room}', [PowerLotteryDuelController::class, 'show']);
         Route::post('/{room}/join', [PowerLotteryDuelController::class, 'join'])
             ->middleware('throttle:20,1');
