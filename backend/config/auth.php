@@ -42,6 +42,9 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'duel' => [
+            'driver' => 'duel-participant',
+        ],
     ],
 
     /*

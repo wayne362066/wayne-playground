@@ -10,6 +10,9 @@ final class PowerLotterySimulator
 
     private const JACKPOT_COMBINATIONS = 22_085_448;
 
+    /** @var array<int, array{maximum: int, prize: string}>|null */
+    private static ?array $prizeOutcomeThresholds = null;
+
     private const PRIZES = [
         'prize_1' => ['label' => '頭獎', 'matches' => 6, 'special' => true, 'amount' => 2_007_288_888],
         'prize_2' => ['label' => '貳獎', 'matches' => 6, 'special' => false, 'amount' => 5_851_027],
@@ -34,6 +37,28 @@ final class PowerLotterySimulator
                 $ticketCount,
             ),
         };
+    }
+
+    /** @return array{numbers: array<int, int>, special: int} */
+    public function drawWinningDraw(): array
+    {
+        return [
+            'numbers' => $this->drawZoneOne(),
+            'special' => random_int(1, 8),
+        ];
+    }
+
+    /** @param array<int, int> $winningNumbers */
+    public function simulateRoundForDraw(
+        int $ticketCount,
+        array $winningNumbers,
+        int $winningSpecial,
+    ): array {
+        return $this->formatRound(
+            $this->simulateRound($ticketCount, $winningNumbers, $winningSpecial),
+            'single',
+            $ticketCount,
+        );
     }
 
     private function simulateUntilProfit(int $ticketCount): array
@@ -101,18 +126,17 @@ final class PowerLotterySimulator
         ];
     }
 
-    private function simulateRound(int $ticketCount): array
-    {
-        $winningNumbers = $this->drawZoneOne();
-        $winningSpecial = random_int(1, 8);
+    private function simulateRound(
+        int $ticketCount,
+        ?array $winningNumbers = null,
+        ?int $winningSpecial = null,
+    ): array {
+        $winningNumbers ??= $this->drawZoneOne();
+        $winningSpecial ??= random_int(1, 8);
         $counts = array_fill_keys(array_keys(self::PRIZES), 0);
 
         for ($ticket = 0; $ticket < $ticketCount; $ticket++) {
-            $ticketNumbers = $this->drawZoneOne();
-            $ticketSpecial = random_int(1, 8);
-            $matchCount = count(array_intersect($ticketNumbers, $winningNumbers));
-            $specialMatch = $ticketSpecial === $winningSpecial;
-            $prizeKey = $this->resolvePrize($matchCount, $specialMatch);
+            $prizeKey = $this->drawTicketPrize();
 
             if ($prizeKey !== null) {
                 $counts[$prizeKey]++;
@@ -201,6 +225,64 @@ final class PowerLotterySimulator
         }
 
         return null;
+    }
+
+    private function drawTicketPrize(): ?string
+    {
+        $roll = mt_rand(1, self::JACKPOT_COMBINATIONS);
+        $thresholds = $this->prizeOutcomeThresholds();
+
+        if ($roll > $thresholds[array_key_last($thresholds)]['maximum']) {
+            return null;
+        }
+
+        foreach ($thresholds as $outcome) {
+            if ($roll <= $outcome['maximum']) {
+                return $outcome['prize'];
+            }
+        }
+
+        return null;
+    }
+
+    /** @return array<int, array{maximum: int, prize: string}> */
+    private function prizeOutcomeThresholds(): array
+    {
+        if (self::$prizeOutcomeThresholds !== null) {
+            return self::$prizeOutcomeThresholds;
+        }
+
+        $thresholds = [];
+        $maximum = 0;
+
+        foreach (self::PRIZES as $prize => $definition) {
+            $zoneOneCombinations = $this->combinations(6, $definition['matches'])
+                * $this->combinations(32, 6 - $definition['matches']);
+            $specialCombinations = $definition['special'] ? 1 : 7;
+            $maximum += $zoneOneCombinations * $specialCombinations;
+            $thresholds[] = [
+                'maximum' => $maximum,
+                'prize' => $prize,
+            ];
+        }
+
+        return self::$prizeOutcomeThresholds = $thresholds;
+    }
+
+    private function combinations(int $total, int $selected): int
+    {
+        if ($selected < 0 || $selected > $total) {
+            return 0;
+        }
+
+        $selected = min($selected, $total - $selected);
+        $result = 1;
+
+        for ($index = 1; $index <= $selected; $index++) {
+            $result = intdiv($result * ($total - $selected + $index), $index);
+        }
+
+        return $result;
     }
 
     private function drawZoneOne(): array

@@ -19,4 +19,10 @@ return [
         'name' => '執行威力彩模擬',
         'default_roles' => ['guest', 'member'],
     ],
+    [
+        'key' => 'lottery.duel',
+        'module' => 'lottery',
+        'name' => '參與威力彩 1v1 對戰',
+        'default_roles' => ['guest', 'member'],
+    ],
 ];

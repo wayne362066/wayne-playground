@@ -93,6 +93,14 @@ function submit() {
             抽獎金額參考威力彩第114016期。
           </p>
           <small>純機率模擬，不構成投注建議。</small>
+          <RouterLink
+            v-if="authStore.can('lottery.duel')"
+            class="duel-entry"
+            to="/lottery/duels"
+          >
+            <span>開啟 1v1 對戰</span>
+            <span aria-hidden="true">→</span>
+          </RouterLink>
         </div>
       </header>
 
@@ -294,6 +302,26 @@ function submit() {
   display: block;
   margin-top: 14px;
   color: var(--text-faint);
+}
+
+.duel-entry {
+  margin-top: 22px;
+  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.duel-entry:hover {
+  transform: translateY(-2px);
 }
 
 .simulator {

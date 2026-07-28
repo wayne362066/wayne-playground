@@ -2,6 +2,7 @@
 
 use App\Core\Http\ApiResponse;
 use App\Core\Http\Middleware\EnsurePermission;
+use App\Modules\Lottery\Exceptions\DuelException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -45,6 +46,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (AccessDeniedHttpException $exception, Request $request) {
             return $request->is('api/*')
                 ? ApiResponse::error('沒有權限執行此操作', 403)
+                : null;
+        });
+
+        $exceptions->render(function (DuelException $exception, Request $request) {
+            return $request->is('api/*')
+                ? ApiResponse::error($exception->getMessage(), $exception->status)
                 : null;
         });
 
