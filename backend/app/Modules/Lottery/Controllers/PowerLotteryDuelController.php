@@ -65,6 +65,16 @@ final class PowerLotteryDuelController extends Controller
         ], '已準備');
     }
 
+    public function addComputer(
+        Request $request,
+        string $room,
+        DuelRoomService $rooms,
+    ): JsonResponse {
+        return ApiResponse::success([
+            'room' => $rooms->addComputer($request, $room),
+        ], '電腦對手已加入');
+    }
+
     public function heartbeat(
         Request $request,
         string $room,

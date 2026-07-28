@@ -42,6 +42,10 @@ export async function joinDuelRoom(roomId, payload) {
   return (await post(`/lottery/duels/${roomId}/join`, payload)).room
 }
 
+export async function addComputerDuelOpponent(roomId) {
+  return (await post(`/lottery/duels/${roomId}/computer`)).room
+}
+
 export async function readyDuelRoom(roomId) {
   return (await post(`/lottery/duels/${roomId}/ready`)).room
 }

@@ -147,6 +147,32 @@ final class DuelRoomService
             });
     }
 
+    public function addComputer(Request $request, string $roomId): array
+    {
+        $participantId = $this->requireParticipant($request);
+
+        return $this->withRoomLock($roomId, function (array $room) use ($participantId): array {
+            $seat = $this->requireActiveSeat($room, $participantId);
+
+            if (
+                $room['status'] !== 'waiting'
+                || count($this->activeSeats($room)) !== 1
+                || $seat !== 'seat_1'
+            ) {
+                throw new DuelException('目前不能加入電腦對手。');
+            }
+
+            $now = now()->timestamp;
+            $room['players']['seat_2'] = $this->newComputer($room['id'], $now);
+            $room['status'] = 'ready';
+            $this->touch($room, $now);
+            $this->persist($room);
+            $this->announce($room, 'computer_joined', true);
+
+            return $this->snapshot($room, $participantId);
+        });
+    }
+
     public function show(Request $request, string $roomId): array
     {
         $participantId = $this->participants->id($request, false);
@@ -260,7 +286,7 @@ final class DuelRoomService
                 $this->resetWaitingRoom($room);
             }
 
-            if (count($this->activeSeats($room)) === 0) {
+            if (count($this->activeHumanSeats($room)) === 0) {
                 $closed = true;
                 $this->close($room, 'empty');
 
@@ -289,13 +315,14 @@ final class DuelRoomService
             }
 
             $room['rematch_votes'][$seat] = true;
+            $computerSeat = $this->computerSeat($room);
 
-            if (count($room['rematch_votes']) === 2) {
+            if ($computerSeat || count($room['rematch_votes']) === 2) {
                 $room['status'] = 'ready';
                 $room['result'] = null;
                 $room['rematch_votes'] = [];
                 foreach (['seat_1', 'seat_2'] as $playerSeat) {
-                    $room['players'][$playerSeat]['ready'] = false;
+                    $room['players'][$playerSeat]['ready'] = $playerSeat === $computerSeat;
                 }
             }
 
@@ -370,7 +397,7 @@ final class DuelRoomService
                     return;
                 }
 
-                $activeSeats = $this->activeSeats($room);
+                $activeSeats = $this->activeHumanSeats($room);
                 $staleSeats = array_values(array_filter(
                     $activeSeats,
                     fn (string $seat): bool => ($now - $room['players'][$seat]['last_seen_at'])
@@ -404,7 +431,13 @@ final class DuelRoomService
                     }
                 }
 
-                foreach ($this->activeSeats($room) as $seat) {
+                if (count($this->activeHumanSeats($room)) === 0) {
+                    $this->close($room, 'empty');
+
+                    return;
+                }
+
+                foreach ($this->activeHumanSeats($room) as $seat) {
                     $isDisconnected = ($now - $room['players'][$seat]['last_seen_at'])
                         >= config('lottery_duels.disconnect_warning_seconds');
 
@@ -474,6 +507,7 @@ final class DuelRoomService
                 'connected' => $player['connected'],
                 'active' => $player['active'],
                 'is_member' => $player['user_id'] !== null,
+                'is_computer' => (bool) ($player['is_computer'] ?? false),
             ] : null;
         }
 
@@ -521,6 +555,22 @@ final class DuelRoomService
             'active' => true,
             'recoverable' => true,
             'last_seen_at' => $now,
+            'is_computer' => false,
+        ];
+    }
+
+    private function newComputer(string $roomId, int $now): array
+    {
+        return [
+            'participant_id' => 'computer:'.$roomId,
+            'user_id' => null,
+            'nickname' => '電腦',
+            'ready' => true,
+            'connected' => true,
+            'active' => true,
+            'recoverable' => false,
+            'last_seen_at' => $now,
+            'is_computer' => true,
         ];
     }
 
@@ -544,7 +594,11 @@ final class DuelRoomService
         );
 
         foreach ($room['players'] as $player) {
-            if ($player && ($player['active'] || $player['recoverable'])) {
+            if (
+                $player
+                && ! ($player['is_computer'] ?? false)
+                && ($player['active'] || $player['recoverable'])
+            ) {
                 $this->cache()->put(
                     $this->participantKey($player['participant_id']),
                     $room['id'],
@@ -594,7 +648,7 @@ final class DuelRoomService
     private function close(array $room, string $reason): void
     {
         foreach ($room['players'] as $player) {
-            if ($player) {
+            if ($player && ! ($player['is_computer'] ?? false)) {
                 $this->cache()->forget($this->participantKey($player['participant_id']));
             }
         }
@@ -655,6 +709,26 @@ final class DuelRoomService
             ['seat_1', 'seat_2'],
             fn (string $seat): bool => (bool) ($room['players'][$seat]['active'] ?? false),
         ));
+    }
+
+    /** @return array<int, string> */
+    private function activeHumanSeats(array $room): array
+    {
+        return array_values(array_filter(
+            $this->activeSeats($room),
+            fn (string $seat): bool => ! ($room['players'][$seat]['is_computer'] ?? false),
+        ));
+    }
+
+    private function computerSeat(array $room): ?string
+    {
+        foreach ($this->activeSeats($room) as $seat) {
+            if ($room['players'][$seat]['is_computer'] ?? false) {
+                return $seat;
+            }
+        }
+
+        return null;
     }
 
     private function seatFor(array $room, string $participantId): ?string

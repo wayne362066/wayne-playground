@@ -46,6 +46,11 @@ const canReady = computed(
     && selfPlayer.value?.active
     && !selfPlayer.value?.ready,
 )
+const canAddComputer = computed(
+  () => current.value?.status === 'waiting'
+    && selfSeat.value === 'seat_1'
+    && !opponent.value,
+)
 const canRematch = computed(
   () => current.value?.status === 'finished'
     && selfPlayer.value?.active
@@ -321,12 +326,22 @@ function finishReason() {
             >
               <template v-if="current.players[seat]">
                 <div class="player-label">
-                  <span>{{ seat === selfSeat ? 'YOU' : 'OPPONENT' }}</span>
+                  <span>
+                    {{
+                      seat === selfSeat
+                        ? 'YOU'
+                        : (current.players[seat].is_computer ? 'COMPUTER' : 'OPPONENT')
+                    }}
+                  </span>
                   <span
                     class="presence"
                     :class="{ offline: !current.players[seat].connected }"
                   >
-                    {{ current.players[seat].connected ? '連線中' : '等待重連' }}
+                    {{
+                      current.players[seat].is_computer
+                        ? '系統對手'
+                        : (current.players[seat].connected ? '連線中' : '等待重連')
+                    }}
                   </span>
                 </div>
                 <div class="player-avatar">{{ current.players[seat].nickname.slice(0, 1) }}</div>
@@ -336,7 +351,11 @@ function finishReason() {
                   class="ready-state"
                   :class="{ done: current.players[seat].ready }"
                 >
-                  {{ current.players[seat].ready ? '已準備' : '尚未準備' }}
+                  {{
+                    current.players[seat].is_computer
+                      ? '自動準備'
+                      : (current.players[seat].ready ? '已準備' : '尚未準備')
+                  }}
                 </span>
                 <strong v-if="current.status === 'finished'" class="outcome">
                   {{ outcomeLabel(seat) }}
@@ -358,6 +377,15 @@ function finishReason() {
                 <div class="waiting-ring" />
                 <h3>等待玩家加入</h3>
                 <span>房間已顯示於公開大廳</span>
+                <button
+                  v-if="canAddComputer"
+                  class="computer-button"
+                  type="button"
+                  :disabled="loading"
+                  @click="store.addComputer"
+                >
+                  加入電腦對手
+                </button>
               </template>
             </article>
 
@@ -700,6 +728,18 @@ button:disabled {
   padding: 10px 17px;
   color: var(--accent);
   background: var(--accent-soft);
+}
+
+.computer-button {
+  margin-top: 18px;
+  padding: 10px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
 }
 
 .empty-lobby {

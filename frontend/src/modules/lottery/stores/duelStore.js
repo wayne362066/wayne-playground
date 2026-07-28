@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import {
+  addComputerDuelOpponent,
   createDuelRoom,
   fetchCurrentDuelRoom,
   fetchDuelRoom,
@@ -82,6 +83,15 @@ export const useDuelStore = defineStore('lottery-duel', {
           this.current = await readyDuelRoom(this.current.id)
         },
         '準備狀態更新失敗。',
+      )
+    },
+    async addComputer() {
+      return this.run(
+        async () => {
+          this.current = await addComputerDuelOpponent(this.current.id)
+          await this.loadRooms()
+        },
+        '加入電腦對手失敗。',
       )
     },
     async heartbeat() {

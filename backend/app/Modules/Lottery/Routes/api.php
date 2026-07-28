@@ -19,6 +19,7 @@ Route::prefix('/lottery/duels')
         Route::get('/{room}', [PowerLotteryDuelController::class, 'show']);
         Route::post('/{room}/join', [PowerLotteryDuelController::class, 'join'])
             ->middleware('throttle:20,1');
+        Route::post('/{room}/computer', [PowerLotteryDuelController::class, 'addComputer']);
         Route::post('/{room}/ready', [PowerLotteryDuelController::class, 'ready']);
         Route::post('/{room}/heartbeat', [PowerLotteryDuelController::class, 'heartbeat']);
         Route::post('/{room}/leave', [PowerLotteryDuelController::class, 'leave']);

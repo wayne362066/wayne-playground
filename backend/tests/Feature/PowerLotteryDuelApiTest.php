@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Modules\Access\Models\Role;
 use App\Modules\Lottery\Jobs\ResolvePowerLotteryDuel;
+use App\Modules\Lottery\Services\DuelRoomService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
@@ -100,6 +101,93 @@ class PowerLotteryDuelApiTest extends TestCase
         );
     }
 
+    public function test_host_can_add_an_auto_ready_computer_and_start_alone(): void
+    {
+        Queue::fake();
+        $room = $this->asGuest('host')
+            ->postJson('/api/lottery/duels', [
+                'nickname' => '單人玩家',
+                'ticket_count' => 5,
+                'mode' => 'single',
+            ])
+            ->json('data.room');
+
+        $this->asGuest('host')
+            ->postJson("/api/lottery/duels/{$room['id']}/computer")
+            ->assertOk()
+            ->assertJsonPath('data.room.status', 'ready')
+            ->assertJsonPath('data.room.players.seat_2.nickname', '電腦')
+            ->assertJsonPath('data.room.players.seat_2.is_computer', true)
+            ->assertJsonPath('data.room.players.seat_2.ready', true);
+
+        $this->asGuest('host')
+            ->postJson("/api/lottery/duels/{$room['id']}/ready")
+            ->assertOk()
+            ->assertJsonPath('data.room.status', 'running')
+            ->assertJsonPath('data.room.game_number', 1);
+
+        Queue::assertPushed(
+            ResolvePowerLotteryDuel::class,
+            fn (ResolvePowerLotteryDuel $job): bool => $job->roomId === $room['id'],
+        );
+    }
+
+    public function test_computer_room_rematch_only_needs_the_human_vote(): void
+    {
+        Queue::fake();
+        $room = $this->createComputerRoom();
+        $this->asGuest('host')->postJson("/api/lottery/duels/{$room['id']}/ready");
+        app(DuelRoomService::class)->complete(
+            $room['id'],
+            1,
+            [
+                'winner' => 'seat_2',
+                'reason' => 'simulation',
+                'players' => [
+                    'seat_1' => ['outcome' => 'loss'],
+                    'seat_2' => ['outcome' => 'win'],
+                ],
+            ],
+        );
+
+        $this->asGuest('host')
+            ->postJson("/api/lottery/duels/{$room['id']}/rematch")
+            ->assertOk()
+            ->assertJsonPath('data.room.status', 'ready')
+            ->assertJsonPath('data.room.players.seat_1.ready', false)
+            ->assertJsonPath('data.room.players.seat_2.ready', true)
+            ->assertJsonCount(0, 'data.room.rematch_votes');
+    }
+
+    public function test_computer_does_not_keep_a_room_alive_without_a_human(): void
+    {
+        $this->freezeTime();
+        $room = $this->createComputerRoom();
+
+        $this->travel(16)->seconds();
+        app(DuelRoomService::class)->cleanup();
+
+        $this->asGuest('host')
+            ->getJson('/api/lottery/duels/current')
+            ->assertOk()
+            ->assertJsonPath('data.room', null);
+    }
+
+    public function test_leaving_a_computer_room_closes_it(): void
+    {
+        $room = $this->createComputerRoom();
+
+        $this->asGuest('host')
+            ->postJson("/api/lottery/duels/{$room['id']}/leave")
+            ->assertOk()
+            ->assertJsonPath('data.room', null);
+
+        $this->asGuest('visitor')
+            ->getJson('/api/lottery/duels')
+            ->assertOk()
+            ->assertJsonCount(0, 'data.rooms');
+    }
+
     public function test_current_room_restores_the_same_guest_session(): void
     {
         $room = $this->asGuest('host')
@@ -150,7 +238,7 @@ class PowerLotteryDuelApiTest extends TestCase
 
         $this->asGuest('host')->postJson("/api/lottery/duels/{$room['id']}/ready");
         $this->asGuest('guest')->postJson("/api/lottery/duels/{$room['id']}/ready");
-        app(\App\Modules\Lottery\Services\DuelRoomService::class)->complete(
+        app(DuelRoomService::class)->complete(
             $room['id'],
             1,
             [
@@ -211,7 +299,7 @@ class PowerLotteryDuelApiTest extends TestCase
         $this->travel(10)->seconds();
         $this->asGuest('host')->postJson("/api/lottery/duels/{$room['id']}/heartbeat");
         $this->travel(6)->seconds();
-        app(\App\Modules\Lottery\Services\DuelRoomService::class)->cleanup();
+        app(DuelRoomService::class)->cleanup();
 
         $this->asGuest('host')
             ->getJson("/api/lottery/duels/{$room['id']}")
@@ -240,7 +328,7 @@ class PowerLotteryDuelApiTest extends TestCase
             ->json('data.room');
 
         $this->travel(16)->seconds();
-        app(\App\Modules\Lottery\Services\DuelRoomService::class)->cleanup();
+        app(DuelRoomService::class)->cleanup();
 
         $this->asGuest('host')
             ->getJson('/api/lottery/duels/current')
@@ -269,7 +357,7 @@ class PowerLotteryDuelApiTest extends TestCase
             ->postJson("/api/lottery/duels/{$room['id']}/heartbeat")
             ->assertOk();
         $this->travel(11)->seconds();
-        app(\App\Modules\Lottery\Services\DuelRoomService::class)->cleanup();
+        app(DuelRoomService::class)->cleanup();
 
         $this->asGuest('host')
             ->getJson('/api/lottery/duels/current')
@@ -302,6 +390,21 @@ class PowerLotteryDuelApiTest extends TestCase
             ->postJson("/api/lottery/duels/{$room['id']}/join", [
                 'nickname' => '挑戰者',
             ])
+            ->json('data.room');
+    }
+
+    private function createComputerRoom(): array
+    {
+        $room = $this->asGuest('host')
+            ->postJson('/api/lottery/duels', [
+                'nickname' => '房主',
+                'ticket_count' => 1,
+                'mode' => 'single',
+            ])
+            ->json('data.room');
+
+        return $this->asGuest('host')
+            ->postJson("/api/lottery/duels/{$room['id']}/computer")
             ->json('data.room');
     }
 
