@@ -1,4 +1,5 @@
 import AuthView from './views/AuthView.vue'
+import ProfileView from './views/ProfileView.vue'
 
 export default [
   {
@@ -10,5 +11,11 @@ export default [
     path: '/register',
     name: 'register',
     component: AuthView,
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: ProfileView,
+    meta: { requiresAuth: true },
   },
 ]

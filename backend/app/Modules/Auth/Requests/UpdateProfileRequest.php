@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Modules\Auth\Requests;
+
+use App\Core\Http\Requests\ApiFormRequest;
+
+class UpdateProfileRequest extends ApiFormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user() !== null;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $nickname = trim((string) $this->input('nickname'));
+
+        $this->merge([
+            'nickname' => $nickname === '' ? null : $nickname,
+        ]);
+    }
+
+    public function rules(): array
+    {
+        return [
+            'nickname' => ['nullable', 'string', 'max:40'],
+        ];
+    }
+}

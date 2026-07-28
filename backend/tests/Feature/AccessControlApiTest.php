@@ -28,7 +28,7 @@ class AccessControlApiTest extends TestCase
 
     public function test_admin_can_create_a_role_assign_it_and_review_the_audit_log(): void
     {
-        $admin = $this->admin();
+        $admin = $this->admin(['nickname' => '站長 Wayne']);
         $member = User::factory()->create();
         $member->roles()->attach($this->role('member'));
         $this->actingAs($admin);
@@ -63,7 +63,8 @@ class AccessControlApiTest extends TestCase
         $this->getJson('/api/admin/access')
             ->assertOk()
             ->assertJsonFragment(['action' => 'role.created'])
-            ->assertJsonFragment(['action' => 'user.roles_updated']);
+            ->assertJsonFragment(['action' => 'user.roles_updated'])
+            ->assertJsonFragment(['actor' => '站長 Wayne']);
     }
 
     public function test_the_last_access_manager_cannot_remove_their_own_management_path(): void
@@ -128,9 +129,9 @@ class AccessControlApiTest extends TestCase
             ->assertForbidden();
     }
 
-    private function admin(): User
+    private function admin(array $attributes = []): User
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create($attributes);
         $user->roles()->attach($this->role('admin'));
 
         return $user;

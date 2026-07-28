@@ -2,6 +2,7 @@
 
 use App\Core\Http\ApiResponse;
 use App\Core\Http\Middleware\EnsurePermission;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -44,6 +45,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (AccessDeniedHttpException $exception, Request $request) {
             return $request->is('api/*')
                 ? ApiResponse::error('沒有權限執行此操作', 403)
+                : null;
+        });
+
+        $exceptions->render(function (AuthenticationException $exception, Request $request) {
+            return $request->is('api/*')
+                ? ApiResponse::error('請先登入後再操作', 401)
                 : null;
         });
 

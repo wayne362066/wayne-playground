@@ -11,6 +11,8 @@ Route::prefix('auth')->group(function (): void {
     ]));
     Route::get('/me', [AuthController::class, 'current']);
     Route::get('/permissions', [AuthController::class, 'permissions']);
+    Route::patch('/profile', [AuthController::class, 'updateProfile'])
+        ->middleware('auth');
     Route::post('/register', [AuthController::class, 'register'])
         ->middleware('throttle:5,1');
     Route::post('/login', [AuthController::class, 'login'])

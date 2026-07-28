@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\Access\Models\Role;
 use App\Modules\Auth\Requests\LoginRequest;
 use App\Modules\Auth\Requests\RegisterRequest;
+use App\Modules\Auth\Requests\UpdateProfileRequest;
 use App\Modules\Auth\Resources\AccountResource;
 use App\Modules\Auth\Services\PasswordAuthenticator;
 use Illuminate\Http\JsonResponse;
@@ -75,6 +76,17 @@ class AuthController extends Controller
     ): JsonResponse {
         return ApiResponse::success(
             $authorization->permissionsFor($request->user())->all()
+        );
+    }
+
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->update($request->validated());
+
+        return ApiResponse::success(
+            (new AccountResource($user->fresh()))->resolve(),
+            '個人設定已更新',
         );
     }
 

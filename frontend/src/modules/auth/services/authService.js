@@ -15,6 +15,14 @@ export async function fetchCurrentPermissions() {
   return response.data.data
 }
 
+export async function updateCurrentProfile(payload) {
+  const csrfToken = await ensureCsrfCookie()
+  const response = await http.patch('/auth/profile', payload, {
+    headers: { 'X-CSRF-TOKEN': csrfToken },
+  })
+  return response.data.data
+}
+
 export async function registerAccount(payload) {
   const csrfToken = await ensureCsrfCookie()
   const response = await http.post('/auth/register', payload, {
