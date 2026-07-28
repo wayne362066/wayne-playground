@@ -14,11 +14,12 @@ class AuthApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_account_schema_keeps_only_the_minimum_login_fields(): void
+    public function test_account_schema_keeps_only_login_and_display_fields(): void
     {
         $this->assertTrue(Schema::hasColumns('users', [
             'id',
             'username',
+            'nickname',
             'password',
             'created_at',
             'updated_at',
@@ -114,6 +115,43 @@ class AuthApiTest extends TestCase
         $this->getJson('/api/auth/permissions')
             ->assertOk()
             ->assertJsonFragment(['wishes.view']);
+    }
+
+    public function test_an_account_can_update_and_clear_its_nickname(): void
+    {
+        $user = User::factory()->create(['username' => 'wayne']);
+
+        $this->actingAs($user)
+            ->withCsrf()
+            ->patchJson('/api/auth/profile', ['nickname' => '  小維  '])
+            ->assertOk()
+            ->assertJsonPath('data.nickname', '小維')
+            ->assertJsonPath('data.display_name', '小維');
+
+        $this->assertSame('小維', $user->fresh()->nickname);
+
+        $this->withCsrf()
+            ->patchJson('/api/auth/profile', ['nickname' => '  '])
+            ->assertOk()
+            ->assertJsonPath('data.nickname', null)
+            ->assertJsonPath('data.display_name', '@wayne');
+
+        $this->assertNull($user->fresh()->nickname);
+    }
+
+    public function test_profile_update_requires_login_and_validates_nickname_length(): void
+    {
+        $this->withCsrf()
+            ->patchJson('/api/auth/profile', ['nickname' => 'visitor'])
+            ->assertUnauthorized();
+
+        $this->actingAs(User::factory()->create())
+            ->withCsrf()
+            ->patchJson('/api/auth/profile', [
+                'nickname' => str_repeat('暱', 41),
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['nickname']);
     }
 
     public function test_login_does_not_reveal_which_credential_was_wrong(): void

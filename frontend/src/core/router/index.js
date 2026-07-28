@@ -28,9 +28,14 @@ const router = createRouter({
 
 export function installAccessGuard(pinia) {
   router.beforeEach((to) => {
+    const authStore = useAuthStore(pinia)
     const permission = to.meta.permission
 
-    if (permission && !useAuthStore(pinia).can(permission)) {
+    if (to.meta.requiresAuth && !authStore.user) {
+      return { name: 'login' }
+    }
+
+    if (permission && !authStore.can(permission)) {
       return { name: 'home' }
     }
 

@@ -54,7 +54,9 @@ class AccessManagementController extends Controller
                 ->get()
                 ->map(fn (AuthorizationAudit $audit): array => [
                     'id' => $audit->id,
-                    'actor' => $audit->actor?->username ?? 'system',
+                    'actor' => $audit->actor
+                        ? ($audit->actor->nickname ?: "@{$audit->actor->username}")
+                        : 'system',
                     'subject_type' => $audit->subject_type,
                     'subject_id' => $audit->subject_id,
                     'action' => $audit->action,
@@ -205,6 +207,7 @@ class AccessManagementController extends Controller
         return [
             'id' => $user->id,
             'username' => $user->username,
+            'nickname' => $user->nickname,
             'role_keys' => $user->roles
                 ->pluck('key')
                 ->sort()

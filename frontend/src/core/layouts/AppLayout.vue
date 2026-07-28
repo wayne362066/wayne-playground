@@ -71,7 +71,9 @@ onBeforeUnmount(() => mediaQuery?.removeEventListener('change', handleSystemThem
           </nav>
           <div class="account-actions">
             <template v-if="authStore.user">
-              <span class="account-name">@{{ authStore.user.username }}</span>
+              <RouterLink class="account-name" to="/profile">
+                {{ authStore.user.display_name }}
+              </RouterLink>
               <button
                 class="account-link"
                 type="button"
@@ -209,7 +211,12 @@ nav a.router-link-active::after {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 0.78rem;
   text-overflow: ellipsis;
+  text-decoration: none;
   white-space: nowrap;
+}
+
+.account-name:hover {
+  color: var(--accent);
 }
 
 .account-link {

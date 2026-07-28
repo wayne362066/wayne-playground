@@ -5,6 +5,7 @@ import {
   loginAccount,
   logoutAccount,
   registerAccount,
+  updateCurrentProfile,
 } from '../services/authService'
 
 function errorMessage(error, fallback) {
@@ -67,6 +68,21 @@ export const useAuthStore = defineStore('auth', {
         return true
       } catch (error) {
         this.error = errorMessage(error, '登出失敗，請稍後再試。')
+        return false
+      } finally {
+        this.loading = false
+      }
+    },
+    async updateProfile(payload) {
+      this.loading = true
+      this.error = ''
+
+      try {
+        this.user = await updateCurrentProfile(payload)
+        this.permissions = this.user?.permissions || []
+        return true
+      } catch (error) {
+        this.error = errorMessage(error, '個人設定儲存失敗，請稍後再試。')
         return false
       } finally {
         this.loading = false

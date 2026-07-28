@@ -13,6 +13,8 @@ class AccountResource extends JsonResource
         return [
             'id' => $this->id,
             'username' => $this->username,
+            'nickname' => $this->nickname,
+            'display_name' => $this->nickname ?: "@{$this->username}",
             'roles' => $this->roles()
                 ->orderBy('key')
                 ->pluck('key')

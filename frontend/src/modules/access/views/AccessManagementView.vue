@@ -160,7 +160,8 @@ onMounted(() => accessStore.load())
         <div class="user-grid">
           <article v-for="user in users" :key="user.id" class="panel user-card">
             <div>
-              <strong>@{{ user.username }}</strong>
+              <strong>{{ user.nickname || `@${user.username}` }}</strong>
+              <span v-if="user.nickname">@{{ user.username }}</span>
               <small>{{ user.id }}</small>
             </div>
             <label v-for="role in assignableRoles" :key="role.id" class="check-row">
@@ -389,6 +390,11 @@ onMounted(() => accessStore.load())
 .user-card > div {
   display: grid;
   gap: 4px;
+}
+
+.user-card > div > span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
 }
 
 .user-card > div small {
