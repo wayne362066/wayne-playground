@@ -6,12 +6,12 @@
 
 ## 技術架構
 
-- Backend：PHP 8.3、Laravel 12、REST API、Laravel Queue、Laravel Scheduler
+- Backend：PHP 8.3、Laravel 12、REST API、Laravel Reverb、Laravel Queue、Laravel Scheduler
 - Frontend：Vue 3、Vite、Vue Router、Pinia、Axios
 - Data：PostgreSQL 15、Redis 7
 - Infrastructure：Docker Compose、Nginx、PHP-FPM、Node 22、Composer
 
-瀏覽器 → Vue (`localhost:5173`) → Laravel API (`localhost:8080/api`)。Nginx 將 PHP 請求交給 PHP-FPM；Queue Worker 與 Scheduler 使用相同 Laravel 程式碼，但在獨立容器運行。
+瀏覽器 → Vue (`localhost:5173`) → Laravel API (`localhost:8080/api`)。威力彩 1v1 對戰另由 Laravel Echo 連接 Reverb (`localhost:8081`) 接收即時事件。Nginx 將 PHP 請求交給 PHP-FPM；Reverb、Queue Worker 與 Scheduler 使用相同 Laravel 程式碼，但在獨立容器運行。
 
 ## 需求環境
 
@@ -42,6 +42,7 @@ docker compose restart php queue-worker scheduler
 
 - 前端：<http://localhost:5173>
 - Backend / Nginx：<http://localhost:8080>
+- Reverb WebSocket：`ws://localhost:8081`
 - 健康檢查：<http://localhost:8080/up>
 - 模組 API：<http://localhost:8080/api/modules>
 
@@ -72,6 +73,7 @@ Windows 可在 WSL2 / Git Bash 使用 Make，也可直接執行 Makefile 內對�
 | --- | --- | --- |
 | `nginx` | Laravel HTTP 入口 | `8080` |
 | `php` | PHP 8.3 FPM / Artisan / Composer | 僅內部 `9000` |
+| `reverb` | Laravel WebSocket 即時事件 | `8081` |
 | `postgres` | PostgreSQL 15 | 僅本機 `127.0.0.1:5432` |
 | `redis` | Cache、Session、Queue | 僅本機 `127.0.0.1:6379` |
 | `node` | Vite 開發伺服器 | `5173` |
@@ -117,7 +119,9 @@ npm run build
 make test
 ```
 
-測試涵蓋模組 API、威力彩第一區固定 6 個號碼、不重複、範圍與排序、第二區範圍、三種模擬模式，以及輸入值與損益計算。
+測試涵蓋模組 API、威力彩號碼與三種模擬模式、1v1 公開房間、登入與訪客暱稱、雙方準備、再來一局、離開判負、15 秒斷線判定、30 分鐘房間清理，以及輸入值與損益計算。
+
+1v1 房間與對局結果目前只存放在 Redis，不建立資料表或永久戰績；Redis 重建時，進行中的房間會一併消失。若從其他裝置連入開發主機，需同步設定 `.env` 的 `VITE_API_BASE_URL`、`REVERB_PUBLIC_HOST` 與 `REVERB_ALLOWED_ORIGINS`。
 
 ## 專案目錄
 
