@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Modules\Lottery\Services\PowerLotteryDuelSimulator;
+use App\Services\PowerLotteryDuelSimulator;
 use Tests\TestCase;
 
 class PowerLotteryDuelSimulatorTest extends TestCase

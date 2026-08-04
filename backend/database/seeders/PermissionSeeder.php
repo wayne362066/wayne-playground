@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Core\Access\PermissionCatalog;
-use App\Modules\Access\Models\AuthorizationAudit;
-use App\Modules\Access\Models\Permission;
-use App\Modules\Access\Models\Role;
+use App\Models\AuthorizationAudit;
+use App\Models\Permission;
+use App\Models\Role;
+use App\Services\PermissionCatalog;
 use Illuminate\Database\Seeder;
 
 class PermissionSeeder extends Seeder

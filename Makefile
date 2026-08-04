@@ -20,7 +20,7 @@ help:
 	@echo "  make migrate           執行尚未套用的 migrations"
 	@echo "  make migrate-fresh     重建資料庫並執行完整 Seeder（會清除資料）"
 	@echo "  make seed              執行完整 DatabaseSeeder（包含權限同步）"
-	@echo "  make seed-permissions  掃描各模組 permissions.php 並同步權限"
+	@echo "  make seed-permissions  掃描集中式 permissions 設定並同步權限"
 	@echo "  make seed-admin        建立／更新開發管理員 admin（僅限非 production）"
 	@echo "  make test              執行 Laravel tests"
 	@echo "  make queue-restart     重新啟動 Laravel queue workers"

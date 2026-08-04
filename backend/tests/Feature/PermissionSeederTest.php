@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Core\Access\PermissionCatalog;
-use App\Modules\Access\Models\Permission;
-use App\Modules\Access\Models\Role;
+use App\Models\Permission;
+use App\Models\Role;
+use App\Services\PermissionCatalog;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

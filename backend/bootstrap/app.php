@@ -1,8 +1,8 @@
 <?php
 
-use App\Core\Http\ApiResponse;
-use App\Core\Http\Middleware\EnsurePermission;
-use App\Modules\Lottery\Exceptions\DuelException;
+use App\Exceptions\DuelException;
+use App\Http\Middleware\EnsurePermission;
+use App\Http\Responses\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
