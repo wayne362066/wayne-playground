@@ -20,7 +20,7 @@
 - `AGENTS.md` 的適用範圍、規則優先級、禁止事項、完成門檻、升級／詢問條件或破壞性操作政策。
 - 調度守則的責任分工、模型／effort 選擇規則、派工欄位、平行寫入邊界、第二意見與停止條件。
 - rubric 的「完成」定義、最低驗證、P0/P1 風險與何時可宣稱通過。
-- `git-review-release-protocol.md` 的功能分類、分支隔離、每次 push 審核、審核後只自主合併至 `develop`、`main` 只由使用者親自合併、發佈批准與不確定性停止條件。
+- `git-review-release-protocol.md` 的功能分類、分支隔離與命名、commit 訊息格式、每次 push 審核、審核後只自主合併至 `develop`、`main` 只由使用者親自合併、發佈批准與不確定性停止條件。
 - 引入新的插件／connector／外部帳號、CI／部署流程、永久 agent／automation，或把治理檔案移到可能改變載入作用的路徑。
 - 刪除制度、覆蓋未追蹤檔、改寫 Git 基底／歷史、推送遠端或其他會改變外部狀態的操作。
 
@@ -64,7 +64,7 @@
 
 ## 修改、備份與回復流程
 
-1. 先跑 `git status --short --branch`、`git rev-parse --verify HEAD`，查明目標是否已追蹤並記錄修改前 commit。2026-07-24 本次查證的可回復基線是 `20420e8a0281cf1a547548302f80f53974515294`；未來必須以當前 HEAD 重新查證，不能永久沿用此 SHA。
+1. 先跑 `git status --short --branch`、`git rev-parse --verify HEAD`，查明目標是否已追蹤並記錄修改前 commit。本次 2026-08-04 查證的可回復基線是 `d1c6e9f8215c004f994b2bc7622ecefdaa105ee0`；未來必須以當前 HEAD 重新查證，不能永久沿用此 SHA。
 2. 目標已由 Git 追蹤時，以修改前 commit 與清楚 diff 作為回復證據；目標未追蹤時，先用明確不重複的檔名在 `docs/codex/archive/` 或 `/private/tmp` 建立副本，確認備份不存在且不覆蓋舊備份。若目標不存在，記錄「本次無既有檔，無需備份」。
 3. 用小 patch 修改；每完成一個核心文件就立即 read-back、做引用檢查，再改下一個文件。
 4. 驗證：`test -s`；對引用路徑用 `test -e`；用 `rg` 檢查工具／命令／模板欄位；有 Git 基線才跑 `git diff --check`，無基線則檢查 `git status --short` 與目標檔案。
@@ -76,7 +76,7 @@
 
 - 路徑：`rg --files` 找到目標，對每個引用跑 `test -e`；不因舊文件提到就假設存在。
 - 指令：讀 `Makefile`、`package.json`、`composer.json`；確認 script／target 仍在。需要執行時記錄 exit code，命令不可用標未確認。
-- 模型／effort／agent：只採用當前工具 schema；若沒有 `multi_agent_v1` 或某個選項，退回主模型或留下審查 Prompt，不編造平行語法。
+- 模型／effort／agent：只採用當前工具 schema；若沒有 `multi_agent_v1__spawn_agent` 或某個選項，退回主模型或留下審查 Prompt，不編造平行語法。
 - skill／plugin／connector：先看當前 Skills／工具清單，再看 manifest；manifest 只能證明磁碟存在，不證明可呼叫或已登入。未安裝 plugin 不自行 request install。
 - 載入作用：查找所有實際 `AGENTS.md`／`AGENTS.override.md`，只把當前作用路徑的檔案當規則；archive、backup、lessons 不作常駐指示。
 - 驗證入口：目前 `make test` 需要 Docker；host PHP test 不等價。README、Makefile、rubric 三者若矛盾，保留證據並由主模型決定是否詢問或修規則。

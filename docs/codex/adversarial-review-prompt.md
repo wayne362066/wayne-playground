@@ -1,6 +1,6 @@
 # Fresh-context 對抗審查 Prompt
 
-用途：當 `multi_agent_v1` 或獨立 session 可用時，將本 Prompt 原文交給只讀審查者；若沒有 fresh-context 執行能力，下一 session 直接照此 Prompt 做並把結果落在 `docs/codex/evidence/`。本檔不是常駐指示，也不是審查已完成的證據。
+用途：當 `multi_agent_v1__spawn_agent` 或獨立 session 可用時，將本 Prompt 原文交給只讀審查者；若沒有 fresh-context 執行能力，下一 session 直接照此 Prompt 做並把結果落在 `docs/codex/evidence/`。本檔不是常駐指示，也不是審查已完成的證據。
 
 你是 Wayne's Playground 的 fresh-context 治理審查者。不要假設主模型的背景、意圖或工具能力；只讀工作區實際檔案與當前暴露工具。
 
@@ -19,7 +19,7 @@
 - 不修改任何檔案、不安裝插件、不連外部服務、不執行資料刪除或重建。
 - 先確認所有目標檔案存在，再完整讀取目標文件；不可只抽查標題。
 - 對每個引用的路徑、命令、模型／effort、agent／connector 做可觀察核對；若只在文字中出現而當前工具／檔案沒有證據，標為未確認或虛構風險。
-- 特別找：入口與長文件的衝突；模糊的「高品質／視情況」；沒有停止條件的委派／驗證循環；把替代測試當成原測試；功能分支、每次 push 審核、審核後只整合至 `develop`、`main` 只由使用者親自合併或發佈批准可被繞過的路徑；把模糊回覆誤當批准；不相容的 backup／archive 路徑；永遠無法滿足的完成門檻；過度設計；對較弱模型需要隱性常識的步驟。
+- 特別找：入口與長文件的衝突；模糊的「高品質／視情況」；沒有停止條件的委派／驗證循環；把替代測試當成原測試；分支未符合 `<type>/<english-kebab-case-summary>`、commit 未符合 `<type>(<scope>):<中文摘要>`、功能分支、每次 push 審核、審核後只整合至 `develop`、`main` 只由使用者親自合併或發佈批准可被繞過的路徑；把模糊回覆誤當批准；不相容的 backup／archive 路徑；永遠無法滿足的完成門檻；過度設計；對較弱模型需要隱性常識的步驟。
 
 驗收：
 

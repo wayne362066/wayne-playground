@@ -2,6 +2,10 @@
 
 本協議適用於所有功能工作。目標是讓每個功能可獨立審查、回復與發佈，並確保任何 `git push` 或發佈動作都由使用者明確批准。
 
+## 適用起點與歷史相容
+
+自使用者確認本次規則後，本協議適用於 Codex 後續新建的功能分支、一般 commit、push、`develop` 合併與發佈動作；既有分支與 commit 不回溯改名、重寫或判定為不合規。純文件／治理變更不因本節自動被視為功能，但仍受 push、合併與發佈審核 gate 約束。
+
 ## 何者算功能
 
 下列任一變更即視為功能：新增或改變 UI／路由／使用者流程、API／資料格式、資料 schema／migration、queue／scheduler 行為、模組業務邏輯、外部整合或部署時的產品行為。純調查、只讀審查、文字修正與治理規則更新不算功能；若分類不確定，停止並詢問使用者。
@@ -13,17 +17,32 @@
 動作：
 
 1. 執行 `git status --short --branch`、`git branch --show-current`，確認工作區與目前分支。功能分支以使用者確認的 `develop` commit 為基底；本地／遠端 `develop` 是否最新不明時先詢問。
-2. 每個功能建立獨立分支，預設命名 `feature/功能代號`，並把「功能代號」換成短且可辨識的實際名稱；代號、基底分支或既有未提交變更歸屬不明時，先詢問使用者。
+2. 每個功能建立獨立分支，預設命名 `<type>/<english-kebab-case-summary>`：
+   - `type` 依工作目的選擇：新功能 `feat`、錯誤修正 `fix`、文件／治理 `docs`、不改行為的重構 `refactor`、測試 `test`、維護 `chore`、建置 `build`、CI `ci`、效能 `perf`、回復變更 `revert`。
+   - `/` 後使用簡短英文小寫 kebab-case，只含英文字母、數字與單一連字號分隔，例如 `feat/tarot-reading`、`fix/lottery-prize-amount`、`docs/git-governance`。
+   - type、英文簡述、基底分支或既有未提交變更歸屬不明時，先詢問使用者。
 3. 不直接在 `main`、`master`、`develop` 或其他共用／發佈分支實作功能。功能分支只包含該功能，不混入另一功能、順手重構或治理變更。
 4. 若工作中出現第二個功能，停止擴張；回報目前分支範圍，另建分支處理第二個功能。
 
 停止條件：基底分支不明、工作區已有無法安全歸屬的變更、分支名稱衝突或切換分支可能覆蓋內容時，不執行 checkout／switch／stash／reset，直接詢問使用者。
 
-驗證：回報目前分支名稱、基底 commit、`git status --short` 與功能範圍；任何一項無法確認就不能開始功能實作。
+驗證：新分支名稱必須符合 `^(feat|fix|docs|refactor|test|chore|build|ci|perf|revert)/[a-z0-9]+(-[a-z0-9]+)*$`；回報目前分支名稱、基底 commit、`git status --short` 與功能範圍。任何一項無法確認就不能開始功能實作。
 
-正例：在確認 `develop` 為基底且工作區乾淨後，為 Minecraft 模組建立 `feature/minecraft-module`。
+正例：在確認 `develop` 為基底且工作區乾淨後，為 Minecraft 模組建立 `feat/minecraft-module`。
 
-反例：在 `develop` 直接修改 Lottery 與 Minecraft，最後用同一個分支一起推送。
+反例（生效起點後新建）：建立 `feature/新增塔羅功能`，其 type 不在規則內且摘要使用中文；或在 `develop` 直接修改 Lottery 與 Minecraft，最後一起推送。既有 `feature/*` 分支不因本例回溯改名。
+
+## Commit 訊息格式
+
+觸發：Codex 準備建立任何一般 commit。Git 或平台自動產生的 merge commit 不在此格式要求內；Codex 不得為了規避格式而刻意改用 merge commit。
+
+規則：使用 `<type>(<scope>):<中文摘要>`，冒號後不加空格，例如 `feat(ui):頁面更改`。`type`、`scope` 與變更檔案要一致；純文件／治理使用 `docs`，若 type 或 scope 無法從既有歷史與任務目的確認，先詢問使用者。
+
+驗證：建立前以 `printf '%s\n' "$message" | rg --pcre2 -q '^(feat|fix|docs|refactor|test|chore|build|ci|perf|revert)\([^()\s:]+\):(?=.*\p{Han})\S.*$'` 檢查 type 清單、非空 scope、冒號後無空白且摘要至少含一個中文字符；另以變更內容人工核對 type／scope 是否相符。建立後用 `git log -1 --format=%s` read-back。摘要必須直接說明變更對象，不使用 `update files`、`misc changes` 或沒有對象的「調整」。此檢查只適用生效起點後由 Codex 建立的一般 commit，不能用來回溯判定既有歷史。
+
+正例：`docs(codex):同步目前專案規劃`
+
+反例：`docs: sync docs`，缺少 scope 且摘要不是中文。
 
 ## 每一次推送都要先審核
 
@@ -34,6 +53,7 @@
 1. 不執行 push；先向使用者提供審核封包：
    - 本地分支、remote 與目標 ref。
    - 即將推送的完整 commit SHA。
+   - commit 訊息及其格式檢查結果。
    - 相對基底的 commit 清單、變更檔案與 diff 摘要。
    - 已執行的測試／build、exit code、未驗證項與風險。
 2. 明確詢問，且問題中必須逐字列出本次實際的完整 commit SHA、本地分支、remote 與目標 ref；不得留下代號或省略值。

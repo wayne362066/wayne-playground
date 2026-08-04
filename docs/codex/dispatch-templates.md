@@ -61,10 +61,10 @@
 先查：git status --short、相關 package.json／composer.json／Makefile scripts。
 
 執行方式
-功能分支：{{feature/實際功能代號}}；`develop` 基底 commit：{{完整 SHA}}。主模型必須在寫入前確認此分支獨立且不在 main／master／develop／共用發佈分支。寫入集合與其他 agent 不重疊；若切片獨立可平行，明確說明各自寫入路徑。model／effort 預設省略並繼承 parent；只有當前 multi_agent schema 明列且有清楚理由才覆蓋。
+工作分支：{{type/english-kebab-case-summary}}；`develop` 基底 commit：{{完整 SHA}}。主模型必須在寫入前確認名稱符合 Git 協議、分支獨立且不在 main／master／develop／共用發佈分支。寫入集合與其他 agent 不重疊；若切片獨立可平行，明確說明各自寫入路徑。model／effort 預設省略並繼承 parent；只有當前 multi_agent schema 明列且有清楚理由才覆蓋。
 
 驗收與測試
-新增／修改後立即 read-back。backend 改動優先 make test；Docker 受阻時另跑 cd backend && php artisan test 並標示 Compose 未驗證。frontend 改動跑 cd frontend && npm run build。治理文件跑引用／placeholder／路徑檢查。記錄每個命令 exit code。
+新增／修改後立即 read-back。backend 改動優先 `make test`；Docker 受阻時另跑 `cd backend && php artisan test` 並標示 Compose 未驗證。frontend 改動跑 `cd frontend && npm run build`；若因 package 依賴未安裝失敗，先標記 build 未驗證，不把它誤判為原始碼錯誤。治理文件跑引用／placeholder／路徑檢查。記錄每個命令 exit code。
 
 停止及升級
 需求、API 契約、資料遷移、設計取捨、分支／基底、remote／ref、審核狀態或不可逆動作需要選擇時停止回報主模型，由主模型詢問使用者；測試與假設矛盾時取得第二意見；同策略失敗兩次後換路，不得原樣重試。禁止自行 push 或發佈。
@@ -91,7 +91,7 @@ AGENTS.md、docs/codex/decision-rubric.md、README 的架構／新增模組段�
 先寫出不變量與預期 diff，再小步修改；寫入不重疊即可平行，否則由主模型處理。model／effort 省略；fresh context 僅適合只讀第二意見。
 
 驗收與測試
-先跑重構前可取得的基線，修改後重跑相同命令；backend 用相關測試／make test，frontend 用 npm run build；比較 public API、序列化格式、路由與測試數量。任何基線缺失都標明。
+先跑重構前可取得的基線，修改後重跑相同命令；backend 用相關測試／`make test`，frontend 用 `cd frontend && npm run build`；比較 public API、序列化格式、路由與測試數量。任何基線缺失都標明。
 
 停止及升級
 行為改變、測試 oracle 缺失、邊界跨越三個以上模組或需要同步改 migration 時停止升級；同一編譯／測試策略兩次失敗即換路或交接。
@@ -161,6 +161,7 @@ AGENTS.md、docs/codex/decision-rubric.md、README 的架構／新增模組段�
 - 本地分支：{{branch}}
 - 基底 commit：{{完整 base SHA}}
 - HEAD commit：{{完整 HEAD SHA}}
+- Commit 訊息：{{type(scope):中文摘要}}
 - Remote／目標 ref：{{remote}}／{{remote ref}}
 - Commits：{{base..HEAD 的 commit 清單}}
 - Diff：{{變更檔案與統計；附可檢視路徑}}

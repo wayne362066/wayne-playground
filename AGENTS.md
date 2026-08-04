@@ -4,7 +4,7 @@
 
 ## 適用範圍與目前狀態
 
-- 本檔適用整個 repo。2026-07-24 的查找結果是：沒有更上層或子目錄的 `AGENTS.md`／`AGENTS.override.md`，所以目前沒有覆蓋衝突；未來新增子目錄規則時，先列出實際找到的檔案與作用路徑，再按 Codex 實際載入結果處理，不猜測未確認的優先順序。
+- 本檔適用整個 repo。2026-08-04 的查找結果是：沒有更上層或子目錄的 `AGENTS.md`／`AGENTS.override.md`，所以目前沒有覆蓋衝突；未來新增子目錄規則時，先列出實際找到的檔案與作用路徑，再按 Codex 實際載入結果處理，不猜測未確認的優先順序。
 - 本專案是 Laravel 12／PHP backend 加 Vue 3／Vite frontend 的 modular monolith。除非使用者明確要求，治理任務不改業務程式碼、不擴大到正式 CI/CD、微服務、Kubernetes 或部署。
 - 保留使用者既有變更。任何刪除、覆蓋、重建資料、`migrate-fresh`、`docker compose down -v` 或其他不可逆操作，都要先確認精確目標與回復方式；未明確授權就停止並詢問。
 
@@ -25,7 +25,9 @@
 
 ## 功能、推送、發佈與不確定性 gate
 
-- 每個功能必須在獨立分支實作；開始改功能程式碼前確認基底、工作區與分支，不直接在 `main`、`master`、`develop` 或共用／發佈分支實作，也不在同一分支混入第二個功能。
+- 生效邊界：自使用者確認本次規則後，對 Codex 後續新建的功能分支、一般 commit、push、`develop` 合併與發佈動作適用；既有分支與 commit 不回溯改名、重寫或判定為不合規。本次治理文件同步本身不視為功能實作。
+- 每個功能必須在獨立分支實作；新分支預設使用 `<type>/<english-kebab-case-summary>`，例如 `feat/tarot-reading`、`fix/lottery-prize-amount`、`docs/git-governance`。開始改功能程式碼前確認基底、工作區與分支，不直接在 `main`、`master`、`develop` 或共用／發佈分支實作，也不在同一分支混入第二個功能。
+- Codex 建立的一般 commit 訊息必須使用 `<type>(<scope>):<中文摘要>`，例如 `feat(ui):頁面更改`；`type`、`scope`、英文分支簡述或摘要不確定時先查既有歷史，仍不確定就詢問使用者。
 - 每一次 `git push` 都要先提供分支、remote／ref、完整 commit SHA、diff 摘要、測試結果與風險給使用者審核。只有使用者明確批准該 SHA 與目標後才能推送一次；SHA、目標或參數改變就重新送審。
 - 使用者明確確認功能 SHA 審核完成後，Codex 的自主合併目標只能是 `develop`；合併後若要 push `develop`，仍要以新的 SHA 逐次送審。合併策略或 conflict 解法不明時停止詢問。
 - `main` 是正式分支，只能由使用者親自把 `develop` 合併進去；Codex 不執行任何功能分支／`develop` 到 `main` 的 merge 或 push。push 批准不等於發佈批准，tag／release、共享或 production 部署、套件發布仍須另行明確批准。

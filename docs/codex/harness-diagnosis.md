@@ -1,6 +1,6 @@
 # Harness 快速診斷
 
-日期：2026-07-24
+日期：2026-08-04
 
 本診斷只根據目前工作區與已暴露工具的可觀察證據，不把未查證的模型、服務或流程寫成既定能力。後續制度文件必須對應這三項問題；若 repo 結構改變，先重跑本診斷的證據命令。
 
@@ -8,15 +8,15 @@
 
 ### 實際證據
 
-- 初始診斷時 `git status --short --branch` 顯示 `No commits yet on main`；2026-07-24 後續查證已變更為 `develop...origin/develop`，HEAD `20420e8a0281cf1a547548302f80f53974515294` 可作修改前基線。Git 回復基線已具備，但仍沒有 CI diff gate。
-- 根目錄 `Makefile` 只有 `test`，其內容是 `docker compose exec php php artisan test`；沒有 root `build`、前端 build、lint、type-check 或 format 驗證 target。
-- README 的測試段落只有 `make test`，新增模組流程才額外提到 `npm run build`；兩者沒有被一個可重複的整合檢查串起來。
+- 目前 `git status --short --branch` 顯示 `develop...origin/develop`，HEAD `d1c6e9f8215c004f994b2bc7622ecefdaa105ee0`；Git 回復基線已具備，但仍沒有 CI diff gate。
+- 根目錄 `Makefile` 提供 Docker／migration／seed／test／queue 操作；`test` 是 `docker compose exec` 的 backend 入口，沒有 root `build`、前端 build、lint、type-check 或 format 驗證 target。
+- README 的測試段落只有 `make test`，新增模組流程才額外提到 `cd frontend && npm run build`；兩者沒有被一個可重複的整合檢查串起來。
 - 已觀察到 `backend/vendor/`、`frontend/node_modules/`、`frontend/dist/` 與二進位 `frontend/src/assets/hero.png` 在工作區；若掃描或 diff 未排除生成物，結果容易失真。
-- 實跑結果顯示執行條件重要：sandbox 內 README 指定的 `make test` 因 Docker socket `operation not permitted` 失敗；在獲准的 sandbox 外重試後通過 6 tests／807 assertions。主機 `cd backend && php artisan test` 與 `cd frontend && npm run build` 也通過。第一次失敗是環境阻塞，不是產品測試失敗；最後一次才是目前可取得的 Compose 後端測試證據。
+- 2026-08-04 實跑結果顯示執行條件重要：`make test` 因 Docker socket `operation not permitted` 失敗；主機 `cd backend && php artisan test` 通過 54 tests、1 skipped、1140 assertions，但不能替代 Compose／PostgreSQL／Redis 整合測試。`cd frontend && npm run build` 因 `package.json` 宣告的 `laravel-echo` 尚未出現在現有 `node_modules` 而失敗；這是依賴安裝狀態未就緒的 build 阻塞，不足以判定 frontend 原始碼錯誤。
 
 ### 原因
 
-目前「程式能跑」與「請求已完成」沒有完整的自動證據門檻。驗證依賴 Docker 執行環境與執行權限，且 Make target 只覆蓋後端整合入口；本次已在獲准條件下補到 Compose 測試證據，但普通 sandbox 仍可能阻塞。Git 已有回復基線，但沒有 CI 自動阻止未驗證變更。
+目前「程式能跑」與「請求已完成」沒有完整的自動證據門檻。驗證依賴 Docker 執行環境與執行權限，且 Make target 只覆蓋後端整合入口；本 session 只有 host backend 測試證據，Compose 與 frontend build 均未完成。Git 已有回復基線，但沒有 CI 自動阻止未驗證變更。
 
 ### 影響
 
@@ -25,7 +25,7 @@
 ### 具體修法
 
 1. 在 `AGENTS.md` 強制以「範圍、變更、驗證命令、結果、未驗證項」作為完成回報；未執行或失敗的檢查不得標成通過。
-2. 在治理 rubric 中按任務類型定義最低驗證：文件／治理做機械引用檢查；後端改動優先跑 `make test`，若普通 sandbox 被 Docker 權限阻塞，先記錄阻塞並在獲准條件下重跑；若仍無法使用 Docker，才另跑 `cd backend && php artisan test` 並明確標記 Compose 未驗證；前端改動跑 `npm run build`；跨層改動兩者都跑。
+2. 在治理 rubric 中按任務類型定義最低驗證：文件／治理做機械引用檢查；後端改動優先跑 `make test`，若普通 sandbox 被 Docker 權限阻塞，先記錄阻塞並在獲准條件下重跑；若仍無法使用 Docker，才另跑 `cd backend && php artisan test` 並明確標記 Compose 未驗證；前端改動跑 `cd frontend && npm run build`；跨層改動兩者都跑。
 3. 把生成物與依賴目錄列為掃描排除項，並要求以 `git status`／`git diff --stat`（在有基線後）確認範圍。
 4. 不自行假設 CI、Docker、subagent 或模型可用；先探測，失敗後按錯誤分類升級或交接。
 
@@ -39,13 +39,13 @@
 
 ### 實際證據
 
-- `find` 與 `rg --files` 顯示 repo 沒有 `AGENTS.md`、`AGENTS.override.md`、`.github/`、`scripts/` 或現有 `docs/` 治理入口。
-- 根目錄 README 同時包含架構、安裝、Docker、部署、備份、FAQ 與新增模組流程；`backend/README.md` 與 `frontend/README.md` 仍是框架原始樣板，沒有本 repo 的修改邊界或驗收規則。
-- README 明確寫本階段不包含 CI/CD、Kubernetes、微服務與正式高可用，但沒有一份 Codex 任務入口把「本次要求／禁止事項／完成條件」固定下來。
+- 建立本次治理入口前的初始 `find` 與 `rg --files` 顯示 repo 沒有 `AGENTS.md`、`AGENTS.override.md`、`.github/`、`scripts/` 或現有 `docs/` 治理入口；這不是目前工作區的狀態宣告。
+- 建立本次治理入口前，根目錄 README 同時包含架構、安裝、Docker、部署、備份、FAQ 與新增模組流程；當時的 `backend/README.md` 與 `frontend/README.md` 仍是框架原始樣板，沒有本 repo 的修改邊界或驗收規則。
+- 建立本次治理入口前，README 明確寫本階段不包含 CI/CD、Kubernetes、微服務與正式高可用，但沒有一份 Codex 任務入口把「本次要求／禁止事項／完成條件」固定下來。
 
 ### 原因
 
-沒有分層規則或任務路由。模型必須從大量產品背景自行猜測目前工作屬於文件、後端、前端、基礎設施還是治理，且沒有固定的停止條件；這會把上下文花在不相關的程式與框架樣板上。
+建立本次治理入口前沒有分層規則或任務路由。模型必須從大量產品背景自行猜測目前工作屬於文件、後端、前端、基礎設施還是治理，且沒有固定的停止條件；這會把上下文花在不相關的程式與框架樣板上。
 
 ### 影響
 
@@ -69,8 +69,8 @@
 ### 實際證據
 
 - 工作區包含 `backend/vendor/`、`frontend/node_modules/`、`frontend/dist/` 與圖片資產；未指定排除規則的 `find`／全文讀取會把依賴、編譯輸出與二進位資料帶入上下文。
-- 根 README 約 260 行，涵蓋多種日常與部署情境；兩份子 README 大多是框架樣板，對目前 Codex 任務價值低。
-- 目前沒有短入口、按需文件、掃描清單或派工回報格式，工具能力盤點也不在 repo 內留痕。
+- 根 README 約 230 行，涵蓋架構、日常操作、資料與部署邊界；目前 `backend/README.md` 與 `frontend/README.md` 已同步為本專案邊界，但 repo 仍沒有獨立產品 roadmap／backlog 文件。
+- 建立本次治理入口前沒有短入口、按需文件、掃描清單或派工回報格式，工具能力盤點也不在 repo 內留痕；目前入口與按需文件已建立，後續若 repo 結構改變需重新診斷。
 
 ### 原因
 
@@ -104,5 +104,5 @@
 ## 查證限制
 
 - 根目錄現有可用 commit 基線；治理變更以修改前 HEAD、`git diff`、`git diff --check`、read-back 與引用檢查驗證。未來 session 必須重新取得當前 HEAD，不能沿用本次 SHA。
-- Docker daemon 與 Compose 後端測試已在獲准的 sandbox 外條件確認可用並通過；普通 sandbox 的直接 socket 權限、其他服務／網路情境與未來 session 狀態仍未確認。
-- 尚未確認是否存在未暴露於本工具清單的其他模型或正式委派語法；制度只引用已暴露的 `multi_agent_v1` 能力，並保留未確認標記。
+- 本 session 的普通 sandbox 無法使用 Docker socket；host backend 測試可通過，但 Compose 整合未驗證。frontend build 受現有 `node_modules` 缺少 `laravel-echo` 阻塞；執行 `npm install` 的網路／registry 狀態尚未確認。
+- 尚未確認是否存在未暴露於本工具清單的其他模型或正式委派語法；制度只引用已暴露的 `multi_agent_v1__spawn_agent` 等完整工具名稱，並保留未確認標記。

@@ -24,7 +24,7 @@
 ### 動作與停止
 
 1. 先把目標、範圍、假設、已試方法、確切錯誤／exit code、已驗證結果與希望裁決的問題寫成升級封包。
-2. 若 `multi_agent_v1` 仍暴露，第二意見用 `fork_context: false`；若需延續上下文才用 `true`。model／effort 預設省略，只有 schema 明列且有任務理由才覆蓋。
+2. 若當前工具清單仍暴露 `multi_agent_v1__spawn_agent`，第二意見用 `fork_context: false`；若需延續上下文才用 `true`。model／effort 預設省略，只有 schema 明列且有任務理由才覆蓋。
 3. 主模型直接核對第二意見提到的高槓桿檔案與行號；第二意見不是驗收替代品。
 4. 第二意見仍無法在證據上決定時，停止改動並交接／詢問，不再以同一假設重試。
 
@@ -43,13 +43,13 @@
 3. 適用驗證達標，且失敗／未驗證項已明示。
 4. 沒有 placeholder、虛構工具、斷裂引用、未授權副作用或未處理的高風險假設。
 
-功能任務另有 Git gate：功能必須在獨立分支；沒有本次 SHA／remote／ref 的使用者批准就只能回報「待推送審核」。使用者確認確切功能 SHA review 完成後，Codex 只能自主合併到 `develop`；合併後的 `develop` push 仍須以新 SHA 送審。遠端 `develop` 就緒後狀態是「待使用者合併 main」，Codex 不得自行 merge／push `main`。完整狀態與證據見 `git-review-release-protocol.md`。
+功能任務另有 Git gate：功能必須在符合 `<type>/<english-kebab-case-summary>` 的獨立分支；Codex 建立的一般 commit 必須符合 `<type>(<scope>):<中文摘要>`；沒有本次 SHA／remote／ref 的使用者批准就只能回報「待推送審核」。使用者確認確切功能 SHA review 完成後，Codex 只能自主合併到 `develop`；合併後的 `develop` push 仍須以新 SHA 送審。遠端 `develop` 就緒後狀態是「待使用者合併 main」，Codex 不得自行 merge／push `main`。完整狀態與證據見 `git-review-release-protocol.md`。
 
 ### 正例與反例
 
 正例：治理任務新增文件後，逐檔 read-back，`rg` 解析引用皆存在，文件檢查命令 exit 0；因 Docker 被拒絕的產品測試不屬於本次治理變更，仍列為環境未確認而不隱藏。
 
-正例：功能在 `feature/minecraft-module` 完成並通過測試，向使用者提供 SHA、目標 ref 與 diff 後停在「待推送審核」；review 完成後自主合併到 `develop`，再以新的 `develop` SHA 取得 push 批准；最後停在「待使用者合併 main」。
+正例：功能在 `feat/minecraft-module` 完成並通過測試，向使用者提供 SHA、目標 ref 與 diff 後停在「待推送審核」；review 完成後自主合併到 `develop`，再以新的 `develop` SHA 取得 push 批准；最後停在「待使用者合併 main」。
 
 反例：只看到 `apply_patch` 成功，沒有重新讀檔、路徑檢查或驗證，就回報「制度已完成」。
 
@@ -81,7 +81,7 @@
 
 正例：已確認功能與測試，但不知道使用者要推到 `origin` 還是另一個 remote；提供目前 remote 證據並詢問，未回答前不 push。
 
-反例：README 已明確說新增模組要跑 `npm run build`，卻因不確定工作目錄而停下詢問；這可以從 `frontend/package.json` 查出。
+反例：README 已明確說新增模組要跑 `cd frontend && npm run build`，卻因不確定工作目錄而停下詢問；這可以從 `frontend/package.json` 查出。
 
 反例：不確定發佈是建立 tag 還是部署 production，便自行選擇其中一個並聲稱使用者已批准。
 

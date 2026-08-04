@@ -2,7 +2,7 @@
 
 一個可長期擴充的個人 Playground 平台，用來收集作品、Side Project、技術實驗與小型工具。目前包含動態模組首頁、威力彩模擬器、塔羅與可追蹤規劃狀態的許願板；Lab 程式碼暫時保留，但不顯示在介面與路由中。
 
-專案採 Modular Monolith：所有後端模組共用一個 Laravel 應用，所有前端模組共用一個 Vue 應用；模組各自維護路由與功能邏輯，避免拆成難以維護的微服務。
+專案採 Modular Monolith：所有後端模組共用一個 Laravel 應用，所有前端模組共用一個 Vue 應用；前端模組各自維護 route definitions，再由 `src/core/router/index.js` 集中匯入，後端 API route definitions 則集中在 `backend/routes/api.php` 與 `backend/routes/web.php`，避免拆成難以維護的微服務。
 
 ## 技術架構
 
@@ -91,7 +91,7 @@ make migrate
 make seed
 ```
 
-目前 API 透過 `ModuleRegistry` 讀取設定檔。未來需要後台管理時，可將 Registry 改為查詢 `Module` model；Controller、Resource 與前端 API 格式不需要改動。
+目前 API 仍由 `ModuleRegistry` 讀取 `backend/config/modules.php`，`Module` model／migration 與 `ModuleSeeder` 已存在，但尚未作為模組首頁的 runtime source。未來若要讓管理員編輯模組 metadata，可再將 Registry 改為查詢 `Module` model；Controller、Resource 與前端 API 格式不需要改動。
 
 ## 前端啟動
 
@@ -139,7 +139,7 @@ make test
 │   └── database/                  # migrations / seeders
 ├── frontend/src/
 │   ├── core/                      # API、router、layout、共用頁面
-│   └── modules/                   # access / home / lottery / tarot / lab
+│   └── modules/                   # auth / access / home / lottery / tarot / wishes / lab
 ├── docker/nginx/
 ├── docker/php/
 ├── docker-compose.yml
@@ -164,9 +164,9 @@ migration 執行時會把既有帳號指定為 `admin`，之後註冊的帳號�
 4. 若需要資料，將 migration 放在 `backend/database/migrations`，model 放在 `backend/app/Models`。
 5. 在 `frontend/src/modules/minecraft` 建立 `views`、`components`、`services`、`stores`、`routes.js`。
 6. 將 routes 匯入 `frontend/src/core/router/index.js`。
-7. 新增 Feature 或 Unit Test，執行 `make test` 與 `npm run build`。
+7. 新增 Feature 或 Unit Test，執行 `make test` 與 `cd frontend && npm run build`。
 
-Controller 只負責 HTTP 輸入、授權、呼叫 Service／Action 與輸出 response，業務邏輯留在對應服務。功能邊界以 namespace、Service／Action 與依賴方向維持；只有 LINE 這類邊界完整且明確不同的外部整合，才在 Controller 或 Service 下建立 `Line/` 子目錄。共用業務服務不得依賴 LINE、WebSocket 或其他傳輸層。
+新增／重構功能的 Controller 目標邊界是只負責 HTTP 輸入、授權、呼叫 Service／Action 與輸出 response，業務邏輯留在對應服務。現有 `WishController`、`AccessManagementController` 與 `AuthController` 仍包含部分查詢、授權或業務判斷；除非任務明確包含重構，不因目標邊界描述而回溯搬移既有邏輯。功能邊界以 namespace、Service／Action 與依賴方向維持；只有 LINE 這類邊界完整且明確不同的外部整合，才在 Controller 或 Service 下建立 `Line/` 子目錄。共用業務服務不得依賴 LINE、WebSocket 或其他傳輸層。
 
 ## API 與錯誤格式
 
@@ -206,7 +206,7 @@ docker compose exec -T postgres pg_restore \
 - 設定強密碼與獨立 production `.env`，使用 `APP_ENV=production`、`APP_DEBUG=false`
 - 不提交 `.env`、Token、SSL private key 或任何正式憑證
 - 執行 `composer install --no-dev --optimize-autoloader`
-- 前端執行 `npm ci && npm run build`，以 Nginx 提供靜態檔
+- 前端執行 `cd frontend && npm ci && npm run build`，以 Nginx 提供靜態檔
 - 定期執行 PostgreSQL dump，並把備份同步到另一台機器或離線儲存
 - 移除 PostgreSQL、Redis 的 host ports，讓它們只留在內部 network
 - 可在 Nginx 前方加入 Cloudflare Tunnel；程式不依賴固定 IP 或固定網域

@@ -1,59 +1,64 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Wayne's Playground Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+這是 Wayne's Playground 的 Laravel 12 API backend。完整的產品背景、Docker 啟動方式、資料備份與發佈邊界請先讀 repo 根目錄的 `README.md`；本檔只保留 backend 開發需要的資訊。
 
-## About Laravel
+## 目前責任
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Laravel 12、PHP 8.3、REST API。
+- 帳號註冊／登入／訪客 session 與 profile nickname。
+- 模組清單、角色與細項權限、權限異動紀錄。
+- 威力彩號碼／損益模擬與 Redis-backed 1v1 對戰。
+- 許願板公開投稿、管理、狀態歷史與恢復。
+- Laravel Reverb 廣播、Redis queue 與 scheduler。
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 目錄邊界
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```text
+app/Http/Controllers/   HTTP 輸入、授權與 response orchestration
+app/Http/Requests/       請求驗證
+app/Http/Resources/      API 資源格式
+app/Http/Responses/      共用 API response
+app/Models/              Eloquent models
+app/Services/            業務與共用服務
+app/Events/              廣播事件
+app/Jobs/                queued jobs
+app/Policies/            資源授權
+config/modules.php       模組 metadata 的目前 runtime source
+config/permissions/      集中式 permission definitions
+database/migrations/     PostgreSQL schema
+database/seeders/        modules、permissions 與開發帳號同步
+routes/api.php            模組 API
+routes/web.php            auth 與 broadcasting routes
+bootstrap/app.php         Laravel health endpoint `/up`
+routes/console.php        scheduler definitions
+```
 
-## Learning Laravel
+目前 `ModuleRegistry` 讀取 `config/modules.php`；`Module` model、migration 與 `ModuleSeeder` 已存在，但尚未取代設定檔成為模組首頁的 runtime source。
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+`app/Http/Controllers` 的 orchestration 是新增／重構功能時的目標邊界，不代表現有程式已完全符合：目前 `WishController`、`AccessManagementController` 與 `AuthController` 仍各自包含部分查詢、授權或業務判斷。除非使用者明確要求重構，不因本文件描述而回溯搬移既有邏輯。
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 開發與驗證
 
-## Laravel Sponsors
+從 repo 根目錄執行：
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+make up
+make migrate
+make seed
+make test
+```
 
-### Premium Partners
+也可在已有 backend dependencies 的主機環境執行：
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```bash
+cd backend
+php artisan test
+```
 
-## Contributing
+主機測試不能替代 Docker Compose、PostgreSQL 與 Redis 整合驗證。backend 沒有獨立的 lint 或 type-check script；新增或修改 API、migration、queue、scheduler 或服務時，依根目錄 `AGENTS.md` 與 `docs/codex/decision-rubric.md` 執行最低驗證。
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 重要資料邊界
 
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- PostgreSQL 儲存帳號、權限、模組 metadata、許願板與事件歷史。
+- Redis 儲存 cache、session、queue 與進行中的 1v1 房間；Redis 重建會使進行中的房間消失。
+- 不執行 `migrate-fresh` 或 `docker compose down -v`，除非使用者已確認精確目標與資料回復方式。
