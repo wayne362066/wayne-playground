@@ -2,10 +2,10 @@
 
 namespace App\Providers;
 
-use App\Core\Access\AuthorizationService;
-use App\Modules\Lottery\Services\DuelParticipantService;
-use App\Modules\Wishes\Models\Wish;
-use App\Modules\Wishes\Policies\WishPolicy;
+use App\Models\Wish;
+use App\Policies\WishPolicy;
+use App\Services\AuthorizationService;
+use App\Services\DuelParticipantService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Module;
 use App\Models\User;
-use App\Modules\Home\Models\Module;
-use App\Modules\Wishes\Models\Wish;
+use App\Models\Wish;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;

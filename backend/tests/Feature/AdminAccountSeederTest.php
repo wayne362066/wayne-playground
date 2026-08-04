@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Permission;
 use App\Models\User;
-use App\Modules\Access\Models\Permission;
 use Database\Seeders\AdminAccountSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;

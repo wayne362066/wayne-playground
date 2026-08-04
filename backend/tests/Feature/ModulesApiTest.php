@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Role;
 use App\Models\User;
-use App\Modules\Access\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

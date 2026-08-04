@@ -128,13 +128,14 @@ make test
 ```text
 .
 ├── backend/
-│   ├── app/Core/                  # 共用 API、服務與基礎能力
-│   ├── app/Modules/
-│   │   ├── Home/                  # 模組清單
-│   │   ├── Access/                # 角色、權限與異動稽核
-│   │   ├── Lottery/               # 威力彩 API
-│   │   └── Wishes/                # 許願板 API、資料與權限邊界
+│   ├── app/Http/                  # Controllers / Requests / Resources / Responses
+│   ├── app/Models/                # Eloquent models
+│   ├── app/Services/              # 應用與共用業務服務
+│   ├── app/Events/                # Laravel events
+│   ├── app/Jobs/                  # Laravel queued jobs
+│   ├── app/Policies/              # Laravel authorization policies
 │   ├── config/modules.php
+│   ├── config/permissions/        # 集中的權限定義
 │   └── database/                  # migrations / seeders
 ├── frontend/src/
 │   ├── core/                      # API、router、layout、共用頁面
@@ -153,19 +154,19 @@ migration 執行時會把既有帳號指定為 `admin`，之後註冊的帳號�
 
 許願板仍允許訪客檢視公開內容與投稿，但管理檢視、內容編輯、狀態調整、審核、封存、恢復及事件歷史各自使用不同權限。
 
-## 新增模組流程
+## 新增後端功能流程
 
 以新增 `Minecraft` 為例：
 
-1. 在 `backend/app/Modules/Minecraft` 建立實際需要的 `Controllers`、`Services`、`Requests`、`Resources` 與 `Routes/api.php`。
+1. Controller、Form Request、Resource、Model、Service 與 route 分別放在 `backend/app/Http/Controllers`、`Http/Requests`、`Http/Resources`、`Models`、`Services` 與 `routes` 的既有技術層目錄；不要為單一 CRUD 或小功能建立完整模組樹。
 2. 在 `backend/config/modules.php` 增加 metadata；`key` 不可重複，並設定 `status` 與 `sort_order`。
-3. 若模組需要權限，在 `backend/app/Modules/Minecraft/permissions.php` 回傳權限定義；執行 `php artisan db:seed --class=PermissionSeeder` 會自動發現並同步，新權限固定加入 `admin`，也可用 `default_roles` 指定首次建立時的 `guest`／`member`。
-4. 若需要資料，將 migration 放在 `backend/database/migrations`，model 可放在模組的 `Models`。
+3. 若功能需要權限，在 `backend/config/permissions/minecraft.php` 回傳權限定義；執行 `php artisan db:seed --class=PermissionSeeder` 會自動發現並同步，新權限固定加入 `admin`，也可用 `default_roles` 指定首次建立時的 `guest`／`member`。
+4. 若需要資料，將 migration 放在 `backend/database/migrations`，model 放在 `backend/app/Models`。
 5. 在 `frontend/src/modules/minecraft` 建立 `views`、`components`、`services`、`stores`、`routes.js`。
 6. 將 routes 匯入 `frontend/src/core/router/index.js`。
 7. 新增 Feature 或 Unit Test，執行 `make test` 與 `npm run build`。
 
-模組不可直接操作另一模組的內部類別。真正共用的內容移到 `Core`；若日後需要協作，優先使用明確介面或事件。
+Controller 只負責 HTTP 輸入、授權、呼叫 Service／Action 與輸出 response，業務邏輯留在對應服務。功能邊界以 namespace、Service／Action 與依賴方向維持；只有 LINE 這類邊界完整且明確不同的外部整合，才在 Controller 或 Service 下建立 `Line/` 子目錄。共用業務服務不得依賴 LINE、WebSocket 或其他傳輸層。
 
 ## API 與錯誤格式
 
