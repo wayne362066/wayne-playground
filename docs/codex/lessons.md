@@ -4,14 +4,14 @@
 
 ## L-001 Docker 整合入口可能被 sandbox 權限阻塞
 
-- 日期／狀態：2026-07-24；confirmed（本 repo sandbox 條件證據）
-- 觸發：執行 `make test`，其 target 是 `docker compose exec php php artisan test`。
+- 日期／狀態：2026-08-31；promoted（本 repo sandbox 與隔離測試入口證據）
+- 觸發：執行需要 Docker socket 的 `make test`；2026-07-24 的 target 是 `docker compose exec php php artisan test`，2026-08-31 已改為 `docker compose run --rm --no-deps ... php php artisan test`。
 - 證據：Docker CLI 版本 29.1.2 存在，但 Docker socket 回傳 `operation not permitted`；同一 session `cd backend && php artisan test` 通過 6 tests／807 assertions。
-- 影響：容易把環境阻塞誤報為產品測試失敗，或把 host 測試誤報為 Compose／PostgreSQL／Redis 整合通過。
-- 暫時處理：先執行既有 host PHP 測試與 frontend build；取得 sandbox 外權限後重跑正式 `make test`，不把替代命令當正式證據。
-- 驗證：sandbox 內 `make test` 失敗；獲准的 sandbox 外重跑 `make test` 通過 6 tests／807 assertions。主機替代測試與正式 Compose 測試均已分開記錄。
+- 影響：容易把 Docker 權限阻塞誤報為產品測試失敗，或把 host／容器 PHPUnit 誤報為 PostgreSQL／Redis 整合通過。
+- 暫時處理：先執行既有 host PHP 測試；取得 sandbox 外權限後重跑正式 `make test`。兩個入口都強制使用 SQLite `:memory:`，但 host 結果仍不能替代容器執行路徑。
+- 驗證：2026-08-31 sandbox 內 `make test` 因 socket 權限失敗；獲准後的一次性容器通過 55 tests、1 skipped、1146 assertions，host 通過相同數量。惡意設定快取指向 `local + pgsql + playground` 時，guard 以 exit 2、0 assertions 中止。
 - 泛化邊界：適用於本 repo 的 Docker 驗證；不代表每台主機或未來 sandbox 都會被拒絕。
-- 升格決定：留在 lesson，因為是否新增 host fallback target 會改變專案介面，需使用者決定；rubric 已收錄先修正執行條件、再把替代驗證標成不等價的規則。
+- 升格決定：已同步到 rubric、README、Makefile 與測試 guard；lesson 保留歷史觸發與 sandbox 邊界，不再把容器 PHPUnit 當成 PostgreSQL／Redis 整合。
 
 ## L-002 frontend 依賴安裝狀態會阻塞 build
 - 日期／狀態：2026-08-04；provisional

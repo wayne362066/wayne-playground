@@ -4,6 +4,12 @@
 
 本診斷只根據目前工作區與已暴露工具的可觀察證據，不把未查證的模型、服務或流程寫成既定能力。後續制度文件必須對應這三項問題；若 repo 結構改變，先重跑本診斷的證據命令。
 
+## 2026-08-31 測試入口差異
+
+- 根目錄 `make test` 已由需要常駐服務的 `docker compose exec` 改為 `docker compose run --rm --no-deps` 一次性 PHP 容器；PHPUnit 強制使用 SQLite `:memory:` 與 array／sync 測試後端，不啟動或連接 PostgreSQL／Redis。
+- `backend/tests/TestCase.php` 會在 `RefreshDatabase` 執行 migration 前檢查實際 environment、connection 與 database；惡意設定快取解析成 `local + pgsql + playground` 時，測試以 exit 2、0 assertions 中止。
+- 2026-08-31 的 host 與一次性容器入口都通過 55 tests、1 skipped、1146 assertions；兩者都不代表 PostgreSQL／Redis 整合。下方 2026-08-04 的命令、數量與阻塞保留為歷史診斷，不是目前入口狀態。
+
 ## P0：錯誤或虛假完成的驗收鏈不完整
 
 ### 實際證據

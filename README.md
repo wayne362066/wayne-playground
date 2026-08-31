@@ -119,6 +119,8 @@ npm run build
 make test
 ```
 
+測試會強制使用 SQLite 記憶體資料庫，以及 array／sync 的 cache、session 與 queue；不會連接或重置 Docker PostgreSQL 的 `playground` 資料庫。若實際解析出的環境、driver 或資料庫不是 `testing`、`sqlite`、`:memory:`，測試會在執行 migration 前立即中止。
+
 測試涵蓋模組 API、威力彩號碼與三種模擬模式、1v1 公開房間、登入與訪客暱稱、雙方準備、再來一局、離開判負、15 秒斷線判定、30 分鐘房間清理，以及輸入值與損益計算。
 
 1v1 房間與對局結果目前只存放在 Redis，不建立資料表或永久戰績；Redis 重建時，進行中的房間會一併消失。若從其他裝置連入開發主機，需同步設定 `.env` 的 `VITE_API_BASE_URL`、`REVERB_PUBLIC_HOST` 與 `REVERB_ALLOWED_ORIGINS`。

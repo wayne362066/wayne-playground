@@ -4,14 +4,14 @@
 
 ## 目前已查證的 harness
 
-截至 2026-08-04：
+截至 2026-08-31；未在本日期重驗的項目仍保留原始日期與未確認邊界：
 
 - 本 session 工具清單實際暴露 `multi_agent_v1__spawn_agent`、`multi_agent_v1__send_input`、`multi_agent_v1__wait_agent`、`multi_agent_v1__resume_agent` 與 `multi_agent_v1__close_agent`。`multi_agent_v1__spawn_agent` schema 支援 `fork_context`、可選 `model`、可選 `reasoning_effort` 與可選 `service_tier`；未查到 `parallel` 參數，同時提交多個 spawn 也未在本 session 成功驗證，不得當成永久能力，只有當前 executor 明確支援且實測成功時才可使用。
 - 本 session 的 `collaboration_mode` 是執行模式標籤，不是可呼叫的 agent 工具名稱；不得用它取代當前工具 schema。下一 session 若工具清單改變，先重新探測再更新本段。
 - spawn 工具列出的 model override 是：`gpt-5.6-sol`（low／medium／high／xhigh／max／ultra）、`gpt-5.6-terra`（low／medium／high／xhigh／max／ultra）、`gpt-5.6-luna`（low／medium／high／xhigh／max）、`gpt-5.5`（low／medium／high／xhigh）、`gpt-5.4`（low／medium／high／xhigh）。工具描述給出的定位分別是 latest frontier、balanced、fast/affordable、frontier、strong everyday；這些定位不等同於本 session 的實際主模型。
 - 正式調度規則：預設不傳 `model`／`reasoning_effort`，讓 agent 繼承 parent；只有任務有清楚的模型理由且該選項仍在當前工具 schema 時才覆蓋。不可填入未列出的模型、effort、tier 或 `parallel` 參數。
 - `fork_context: false` 代表新 agent 只收到派工訊息，適合 fresh-context 審查；`true` 會帶入目前 thread history，適合延續高度依賴的工作。選擇後必須在回報中寫明。
-- 本 session 可用 Git、rg、Make、Docker CLI、PHP 與 Node／npm；`make test` 因普通 sandbox 的 Docker socket 權限失敗，host `cd backend && php artisan test` 通過 54 tests、1 skipped、1140 assertions，不能等同 Compose 整合；`cd frontend && npm run build` 因現有 `node_modules` 缺少 package.json 已宣告的 `laravel-echo` 而失敗。這些是本 session 的環境證據，不是所有 session 的保證。
+- 2026-08-31 查證：`make test` 使用 `docker compose run --rm --no-deps` 建立一次性 PHP 容器，強制 SQLite `:memory:` 與 array／sync 測試後端，通過 55 tests、1 skipped、1146 assertions；host `cd backend && php artisan test` 也通過相同測試。兩個入口都不代表 PostgreSQL／Redis 整合。普通 sandbox 仍會被 Docker socket 權限阻塞，需在獲准條件下執行容器入口；主機有 PHP 與 Node／npm，但沒有全域 `composer`。這些是本 session 的環境證據，不是所有 session 的保證。
 - 磁碟上查到 system／plugin skill manifests（如 browser、documents、pdf、presentations、spreadsheets、github、sites、visualize、imagegen、openai-docs、skill/plugin creator 等），但「有 manifest」不代表當前 session 可呼叫。只使用本 session Skills 清單或工具清單明確暴露的能力；目前可見的 app connector 主要是 GitHub、Sites、Codex document control、plugin management 與 hotline。未查到 Gmail、Slack、Calendar、Drive、Notion、Box、Figma、Atlassian、Outlook、SharePoint、Teams 的可呼叫工具，且它們在 recommended plugins 中標為未安裝，不得自行假設可用。
 - repo 的 `.agents/`、`.codex/` 沒有工作區檔案；沒有 CI、`.github/`、scripts 或專案專用持久化機制。治理文件落在 repo 是唯一已確認可長期保存的方式；Codex thread／agent 狀態的跨 session 持久化未確認。
 - 當前主模型名稱、主模型 reasoning effort、可同時執行的 agent 上限、Docker sandbox 外的 daemon 權限、CI remote 與 connector 認證狀態均未確認。

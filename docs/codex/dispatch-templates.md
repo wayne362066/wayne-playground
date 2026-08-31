@@ -64,7 +64,7 @@
 工作分支：{{type/english-kebab-case-summary}}；`develop` 基底 commit：{{完整 SHA}}。主模型必須在寫入前確認名稱符合 Git 協議、分支獨立且不在 main／master／develop／共用發佈分支。寫入集合與其他 agent 不重疊；若切片獨立可平行，明確說明各自寫入路徑。model／effort 預設省略並繼承 parent；只有當前 multi_agent schema 明列且有清楚理由才覆蓋。
 
 驗收與測試
-新增／修改後立即 read-back。backend 改動優先 `make test`；Docker 受阻時另跑 `cd backend && php artisan test` 並標示 Compose 未驗證。frontend 改動跑 `cd frontend && npm run build`；若因 package 依賴未安裝失敗，先標記 build 未驗證，不把它誤判為原始碼錯誤。治理文件跑引用／placeholder／路徑檢查。記錄每個命令 exit code。
+新增／修改後立即 read-back。backend 改動優先 `make test`；Docker 受阻時另跑 `cd backend && php artisan test` 並標示容器路徑未驗證。兩個 PHPUnit 入口都應由測試 guard 確認使用 SQLite `:memory:`，且都不代表 PostgreSQL／Redis 整合。frontend 改動跑 `cd frontend && npm run build`；若因 package 依賴未安裝失敗，先標記 build 未驗證，不把它誤判為原始碼錯誤。治理文件跑引用／placeholder／路徑檢查。記錄每個命令 exit code。
 
 停止及升級
 需求、API 契約、資料遷移、設計取捨、分支／基底、remote／ref、審核狀態或不可逆動作需要選擇時停止回報主模型，由主模型詢問使用者；測試與假設矛盾時取得第二意見；同策略失敗兩次後換路，不得原樣重試。禁止自行 push 或發佈。
