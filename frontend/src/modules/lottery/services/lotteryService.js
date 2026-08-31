@@ -12,3 +12,12 @@ export async function simulatePowerLottery(ticketCount, mode) {
   })
   return response.data.data
 }
+
+export async function simulateSelectedPowerLottery(zoneOne, zoneTwo, periodCount) {
+  const response = await http.post('/lottery/power/simulate-selected', {
+    zone_one: zoneOne,
+    zone_two: zoneTwo,
+    period_count: periodCount,
+  })
+  return response.data.data
+}

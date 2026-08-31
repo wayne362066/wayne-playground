@@ -23,9 +23,18 @@ const modes = [
     title: '直到中頭獎',
     description: '依真實組合機率抽樣，估算要經過幾期才出現頭獎。',
   },
+  {
+    value: 'selected',
+    number: '04',
+    title: '自選號碼',
+    description: '固定一組自選號碼，累計指定期數內的中獎結果與損益。',
+  },
 ]
 
 const ticketCount = ref(10)
+const periodCount = ref(100)
+const selectedZoneOne = ref([])
+const selectedZoneTwo = ref(null)
 const selectedMode = ref('single')
 const localError = ref('')
 const store = useLotteryStore()
@@ -35,6 +44,10 @@ const { simulation, simulatedAt, loading, error } = storeToRefs(store)
 const selectedModeInfo = computed(
   () => modes.find((mode) => mode.value === selectedMode.value),
 )
+
+const isSelectedMode = computed(() => selectedMode.value === 'selected')
+const zoneOneNumbers = Array.from({ length: 38 }, (_, index) => index + 1)
+const zoneTwoNumbers = Array.from({ length: 8 }, (_, index) => index + 1)
 
 const winningPrizes = computed(
   () => simulation.value?.prizes.filter((prize) => prize.count > 0) || [],
@@ -65,7 +78,41 @@ function formatMoney(value) {
   }).format(value ?? 0)
 }
 
+function toggleZoneOne(number) {
+  if (selectedZoneOne.value.includes(number)) {
+    selectedZoneOne.value = selectedZoneOne.value.filter((selected) => selected !== number)
+    return
+  }
+
+  if (selectedZoneOne.value.length < 6) {
+    selectedZoneOne.value = [...selectedZoneOne.value, number].sort((a, b) => a - b)
+  }
+}
+
 function submit() {
+  if (isSelectedMode.value) {
+    const normalizedPeriods = Number(periodCount.value)
+
+    if (selectedZoneOne.value.length !== 6) {
+      localError.value = '第一區必須選擇 6 個號碼。'
+      return
+    }
+
+    if (!Number.isInteger(selectedZoneTwo.value)) {
+      localError.value = '第二區必須選擇 1 個號碼。'
+      return
+    }
+
+    if (!Number.isInteger(normalizedPeriods) || normalizedPeriods < 1 || normalizedPeriods > 1000000) {
+      localError.value = '模擬期數必須是 1 到 1,000,000 的整數。'
+      return
+    }
+
+    localError.value = ''
+    store.simulateSelected(selectedZoneOne.value, selectedZoneTwo.value, normalizedPeriods)
+    return
+  }
+
   const normalizedCount = Number(ticketCount.value)
   if (!Number.isInteger(normalizedCount) || normalizedCount < 1 || normalizedCount > 10000) {
     localError.value = '每期購買注數必須是 1 到 10,000 的整數。'
@@ -113,7 +160,7 @@ function submit() {
           <span>STEP 01</span>
           <div>
             <h2>選擇模擬方式</h2>
-            <p>三種方式，共用同一套中獎規則。</p>
+            <p>四種方式，共用同一套中獎規則。</p>
           </div>
         </div>
 
@@ -132,14 +179,70 @@ function submit() {
           </label>
         </div>
 
+        <div v-if="isSelectedMode" class="custom-picker">
+          <section>
+            <div class="picker-heading">
+              <strong>第一區</strong>
+              <span>1–38 選 6（已選 {{ selectedZoneOne.length }} 個）</span>
+            </div>
+            <div class="number-picker" aria-label="選擇第一區號碼">
+              <button
+                v-for="number in zoneOneNumbers"
+                :key="number"
+                type="button"
+                class="number-choice"
+                :class="{ selected: selectedZoneOne.includes(number) }"
+                :disabled="selectedZoneOne.length === 6 && !selectedZoneOne.includes(number)"
+                :aria-pressed="selectedZoneOne.includes(number)"
+                @click="toggleZoneOne(number)"
+              >
+                {{ String(number).padStart(2, '0') }}
+              </button>
+            </div>
+          </section>
+
+          <section>
+            <div class="picker-heading">
+              <strong>第二區</strong>
+              <span>1–8 選 1</span>
+            </div>
+            <div class="number-picker zone-two-picker" aria-label="選擇第二區號碼">
+              <button
+                v-for="number in zoneTwoNumbers"
+                :key="number"
+                type="button"
+                class="number-choice special-choice"
+                :class="{ selected: selectedZoneTwo === number }"
+                :aria-pressed="selectedZoneTwo === number"
+                @click="selectedZoneTwo = number"
+              >
+                {{ String(number).padStart(2, '0') }}
+              </button>
+            </div>
+          </section>
+        </div>
+
         <div class="ticket-control">
           <div>
-            <label for="ticket-count">每期購買注數</label>
-            <span>1–10,000 注</span>
+            <label :for="isSelectedMode ? 'period-count' : 'ticket-count'">
+              {{ isSelectedMode ? '模擬期數' : '每期購買注數' }}
+            </label>
+            <span>{{ isSelectedMode ? '1–1,000,000 期' : '1–10,000 注' }}</span>
           </div>
           <div class="input-row">
             <div class="number-input">
               <input
+                v-if="isSelectedMode"
+                id="period-count"
+                v-model.number="periodCount"
+                type="number"
+                min="1"
+                max="1000000"
+                step="1"
+                inputmode="numeric"
+              >
+              <input
+                v-else
                 id="ticket-count"
                 v-model.number="ticketCount"
                 type="number"
@@ -148,7 +251,7 @@ function submit() {
                 step="1"
                 inputmode="numeric"
               >
-              <span>注 / 期</span>
+              <span>{{ isSelectedMode ? '期' : '注 / 期' }}</span>
             </div>
             <button type="submit" :disabled="loading">
               <span>{{ loading ? '計算中…' : '開始模擬' }}</span>
@@ -178,7 +281,8 @@ function submit() {
           <article class="result-summary panel" :class="resultTone">
             <div class="summary-topline">
               <span>{{ modes.find((mode) => mode.value === simulation.mode)?.title }}</span>
-              <span>{{ formatNumber(simulation.ticket_count) }} 注 / 期</span>
+              <span v-if="simulation.mode === 'selected'">固定 1 注 · 累計</span>
+              <span v-else>{{ formatNumber(simulation.ticket_count) }} 注 / 期</span>
             </div>
             <p class="result-message">{{ simulation.message }}</p>
             <div class="attempt-count">
@@ -194,20 +298,34 @@ function submit() {
             <p v-if="simulation.calculation_method === 'geometric_distribution'" class="attempt-note">
               依每注 1 / 22,085,448 的頭獎機率進行幾何分布抽樣，不以無上限迴圈占用伺服器。
             </p>
+            <p v-if="simulation.mode === 'selected'" class="attempt-note">
+              每期固定購買同一組號碼 1 注；自選號碼與電腦選號的中獎機率相同。
+            </p>
           </article>
 
           <article class="winning-draw panel">
-            <div class="card-label">本次中獎號碼</div>
-            <div class="balls" aria-label="第一區中獎號碼">
+            <div class="card-label">
+              {{ simulation.mode === 'selected' ? '你的固定號碼' : '本次中獎號碼' }}
+            </div>
+            <div
+              class="balls"
+              :aria-label="simulation.mode === 'selected' ? '自選第一區號碼' : '第一區中獎號碼'"
+            >
               <span
-                v-for="number in simulation.winning_numbers"
+                v-for="number in simulation.mode === 'selected'
+                  ? simulation.selected_numbers.zone_one
+                  : simulation.winning_numbers"
                 :key="number"
                 class="ball"
               >{{ String(number).padStart(2, '0') }}</span>
             </div>
             <div class="special-row">
               <span>第二區</span>
-              <span class="ball special">{{ String(simulation.winning_special).padStart(2, '0') }}</span>
+              <span class="ball special">
+                {{ String(simulation.mode === 'selected'
+                  ? simulation.selected_numbers.zone_two
+                  : simulation.winning_special).padStart(2, '0') }}
+              </span>
             </div>
           </article>
         </div>
@@ -218,7 +336,7 @@ function submit() {
             <strong>{{ formatMoney(simulation.total_prize_money) }}</strong>
           </article>
           <article>
-            <span>{{ simulation.mode === 'until_jackpot' ? '累計花費' : '本期花費' }}</span>
+            <span>{{ ['until_jackpot', 'selected'].includes(simulation.mode) ? '累計花費' : '本期花費' }}</span>
             <strong>{{ formatMoney(simulation.cost) }}</strong>
           </article>
           <article :class="resultTone">
@@ -233,20 +351,23 @@ function submit() {
               <span>PRIZE BREAKDOWN</span>
               <h3>中獎明細</h3>
             </div>
-            <strong>{{ formatNumber(simulation.total_prize_count) }} <small>注中獎</small></strong>
+            <strong>
+              {{ formatNumber(simulation.total_prize_count) }}
+              <small>{{ simulation.mode === 'selected' ? '次中獎' : '注中獎' }}</small>
+            </strong>
           </div>
 
           <div v-if="winningPrizes.length" class="prize-table">
             <div v-for="prize in winningPrizes" :key="prize.key" class="prize-row">
               <strong>{{ prize.label }}</strong>
-              <span>{{ formatNumber(prize.count) }} 注</span>
+              <span>{{ formatNumber(prize.count) }} {{ simulation.mode === 'selected' ? '次' : '注' }}</span>
               <span>每注 {{ formatMoney(prize.unit_prize) }}</span>
               <strong>{{ formatMoney(prize.amount) }}</strong>
             </div>
           </div>
           <div v-else class="no-prize">
             <span aria-hidden="true">—</span>
-            <p>這一期沒有任何中獎注數。</p>
+            <p>{{ simulation.mode === 'selected' ? '指定期數內沒有中獎。' : '這一期沒有任何中獎注數。' }}</p>
           </div>
         </article>
       </section>
@@ -365,7 +486,7 @@ function submit() {
 .mode-grid {
   margin-top: 28px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 
@@ -437,6 +558,80 @@ function submit() {
 
 .active .radio-mark {
   border: 5px solid var(--accent);
+}
+
+.custom-picker {
+  margin-top: 28px;
+  padding: 24px;
+  display: grid;
+  gap: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-strong);
+}
+
+.picker-heading {
+  margin-bottom: 14px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.picker-heading strong {
+  font-size: 0.9rem;
+}
+
+.picker-heading span {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+}
+
+.number-picker {
+  display: grid;
+  grid-template-columns: repeat(10, 44px);
+  gap: 8px;
+}
+
+.zone-two-picker {
+  grid-template-columns: repeat(8, 44px);
+}
+
+button.number-choice {
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  display: grid;
+  justify-content: center;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  color: var(--text);
+  background: var(--surface);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button.number-choice:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+button.number-choice.selected {
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+button.number-choice:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+button.number-choice.special-choice.selected {
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .ticket-control {
@@ -809,8 +1004,18 @@ button:disabled {
     min-height: 145px;
   }
 
+  .number-picker {
+    grid-template-columns: repeat(8, 42px);
+  }
+
   .money-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 801px) and (max-width: 1100px) {
+  .mode-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -824,6 +1029,21 @@ button:disabled {
 
   .input-row {
     grid-template-columns: 1fr;
+  }
+
+  .custom-picker {
+    padding: 18px;
+  }
+
+  .picker-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .number-picker,
+  .zone-two-picker {
+    grid-template-columns: repeat(5, 40px);
   }
 
   button {

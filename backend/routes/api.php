@@ -25,6 +25,8 @@ Route::middleware('web')->group(function (): void {
         ->middleware('permission:lottery.generate');
     Route::post('/lottery/power/simulate', [PowerLotteryController::class, 'simulate'])
         ->middleware('permission:lottery.simulate');
+    Route::post('/lottery/power/simulate-selected', [PowerLotteryController::class, 'simulateSelected'])
+        ->middleware('permission:lottery.simulate');
 
     Route::prefix('/lottery/duels')
         ->middleware(['permission:lottery.duel', 'throttle:120,1'])

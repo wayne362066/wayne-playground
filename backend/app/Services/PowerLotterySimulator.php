@@ -39,6 +39,52 @@ final class PowerLotterySimulator
         };
     }
 
+    /** @param array<int, int> $zoneOne */
+    public function simulateSelectedTicket(array $zoneOne, int $zoneTwo, int $periodCount): array
+    {
+        sort($zoneOne);
+        $counts = array_fill_keys(array_keys(self::PRIZES), 0);
+
+        for ($period = 0; $period < $periodCount; $period++) {
+            $prizeKey = $this->drawTicketPrize();
+
+            if ($prizeKey !== null) {
+                $counts[$prizeKey]++;
+            }
+        }
+
+        $totalPrizeMoney = 0;
+        foreach (self::PRIZES as $key => $prize) {
+            $totalPrizeMoney += $counts[$key] * $prize['amount'];
+        }
+
+        $cost = $periodCount * self::TICKET_PRICE;
+        $totalPrizeCount = array_sum($counts);
+
+        return [
+            'mode' => 'selected',
+            'ticket_count' => 1,
+            'period_count' => $periodCount,
+            'attempts' => $periodCount,
+            'completed' => true,
+            'selected_numbers' => [
+                'zone_one' => $zoneOne,
+                'zone_two' => $zoneTwo,
+            ],
+            'prizes' => $this->formatPrizes($counts),
+            'total_prize_count' => $totalPrizeCount,
+            'total_prize_money' => $totalPrizeMoney,
+            'cost' => $cost,
+            'net_profit' => $totalPrizeMoney - $cost,
+            'message' => sprintf(
+                '固定這組號碼模擬 %s 期，共中 %s 個獎。',
+                number_format($periodCount),
+                number_format($totalPrizeCount),
+            ),
+            'calculation_method' => 'fixed_ticket_simulation',
+        ];
+    }
+
     /** @return array{numbers: array<int, int>, special: int} */
     public function drawWinningDraw(): array
     {
