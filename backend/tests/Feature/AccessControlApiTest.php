@@ -127,6 +127,14 @@ class AccessControlApiTest extends TestCase
                 'mode' => 'single',
             ])
             ->assertForbidden();
+
+        $this->withCsrf()
+            ->postJson('/api/lottery/power/simulate-selected', [
+                'zone_one' => [1, 2, 3, 4, 5, 6],
+                'zone_two' => 1,
+                'period_count' => 10,
+            ])
+            ->assertForbidden();
     }
 
     private function admin(array $attributes = []): User

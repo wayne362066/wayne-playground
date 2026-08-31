@@ -101,6 +101,61 @@ class PowerLotteryApiTest extends TestCase
         $this->assertBetween(1, 100, $response->json('data.simulation.attempts'));
     }
 
+    public function test_it_simulates_one_selected_ticket_across_the_requested_periods(): void
+    {
+        $response = $this->withCsrf()->postJson('/api/lottery/power/simulate-selected', [
+            'zone_one' => [38, 1, 12, 7, 23, 19],
+            'zone_two' => 6,
+            'period_count' => 25,
+        ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.simulation.mode', 'selected')
+            ->assertJsonPath('data.simulation.ticket_count', 1)
+            ->assertJsonPath('data.simulation.period_count', 25)
+            ->assertJsonPath('data.simulation.attempts', 25)
+            ->assertJsonPath('data.simulation.selected_numbers.zone_one', [1, 7, 12, 19, 23, 38])
+            ->assertJsonPath('data.simulation.selected_numbers.zone_two', 6)
+            ->assertJsonPath('data.simulation.cost', 2500)
+            ->assertJsonPath('data.simulation.calculation_method', 'fixed_ticket_simulation')
+            ->assertJsonCount(10, 'data.simulation.prizes');
+
+        $simulation = $response->json('data.simulation');
+        $this->assertSame(
+            $simulation['total_prize_money'] - $simulation['cost'],
+            $simulation['net_profit'],
+        );
+        $this->assertLessThanOrEqual(25, $simulation['total_prize_count']);
+    }
+
+    public function test_selected_ticket_input_must_be_valid(): void
+    {
+        $validPayload = [
+            'zone_one' => [1, 2, 3, 4, 5, 6],
+            'zone_two' => 1,
+            'period_count' => 10,
+        ];
+
+        foreach ([
+            ['payload' => ['zone_one' => [1, 2, 3, 4, 5]], 'field' => 'zone_one'],
+            ['payload' => ['zone_one' => [1, 2, 3, 4, 5, 39]], 'field' => 'zone_one.5'],
+            ['payload' => ['zone_one' => [1, 2, 3, 4, 5, 5]], 'field' => 'zone_one.5'],
+            ['payload' => ['zone_two' => 9], 'field' => 'zone_two'],
+            ['payload' => ['period_count' => 0], 'field' => 'period_count'],
+            ['payload' => ['period_count' => 1000001], 'field' => 'period_count'],
+        ] as $case) {
+            $this->withCsrf()
+                ->postJson('/api/lottery/power/simulate-selected', [
+                    ...$validPayload,
+                    ...$case['payload'],
+                ])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors($case['field']);
+        }
+    }
+
     public function test_simulation_input_must_be_valid(): void
     {
         foreach ([
