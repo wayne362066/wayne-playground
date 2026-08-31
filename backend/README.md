@@ -55,7 +55,7 @@ cd backend
 php artisan test
 ```
 
-主機測試不能替代 Docker Compose、PostgreSQL 與 Redis 整合驗證。backend 沒有獨立的 lint 或 type-check script；新增或修改 API、migration、queue、scheduler 或服務時，依根目錄 `AGENTS.md` 與 `docs/codex/decision-rubric.md` 執行最低驗證。
+`make test` 與主機測試都會由 `phpunit.xml` 強制使用 SQLite `:memory:`，並在 Laravel 測試基底再次檢查實際解析出的設定；因此 `RefreshDatabase` 只會重建記憶體資料庫，不會碰 PostgreSQL 的應用資料。這些測試不等同 PostgreSQL／Redis 整合驗證。backend 沒有獨立的 lint 或 type-check script；新增或修改 API、migration、queue、scheduler 或服務時，依根目錄 `AGENTS.md` 與 `docs/codex/decision-rubric.md` 執行最低驗證。
 
 ## 重要資料邊界
 

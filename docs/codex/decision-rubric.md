@@ -30,7 +30,7 @@
 
 ### 正例與反例
 
-正例：`make test` 因 Docker socket 被拒絕，主機 PHP 測試通過；把它分類為環境阻塞，記錄 Compose 未驗證，並請有權限的執行者重跑整合測試。
+正例：`make test` 因 Docker socket 被拒絕，主機 PHP 測試通過；把它分類為容器路徑未驗證，並明確說明兩個入口都只使用隔離的 SQLite／array 測試後端，不代表 PostgreSQL／Redis 整合通過。
 
 反例：主機 unit／feature 測試通過，就把 Docker Compose、PostgreSQL、Redis 依賴也寫成「全部通過」。
 
@@ -103,7 +103,7 @@
 
 ### 正例與反例
 
-正例：Docker socket 連不上後改跑已存在的 `cd backend && php artisan test` 與 `cd frontend && npm run build`，回報它們不能替代 Compose 整合測試。
+正例：Docker socket 連不上後改跑已存在的 `cd backend && php artisan test` 與 `cd frontend && npm run build`，回報主機測試不能替代容器路徑，且兩個 backend 測試入口都不涵蓋 PostgreSQL／Redis 整合。
 
 反例：反覆執行同一個 `make test`，只因想取得不同結果，最後把最後一次未成功的命令省略。
 
@@ -114,7 +114,7 @@
 | 任務類型 | 最低完成條件 | 最低驗證 | 明確不能宣稱 |
 | --- | --- | --- | --- |
 | 治理／文件 | 目標文件已落檔，引用與路由可達，無矛盾或未替換標記 | 每檔 read-back；`test -s`；對引用路徑做 `test -e`／`rg`；有 Git 基線才跑 `git diff --check` | 不能因文件看起來合理就宣稱模型／工具在所有 session 都可用 |
-| backend | 相關程式與測試一致，API／資料邊界未破壞 | 優先 `make test`；若 Docker 阻塞，`cd backend && php artisan test` 只能標 host 測試通過、Compose 未驗證 | 不能把 host 測試等同 Docker/PostgreSQL/Redis 整合通過 |
+| backend | 相關程式與測試一致，API／資料邊界未破壞 | 優先 `make test`；若 Docker 阻塞，`cd backend && php artisan test` 只能標 host 測試通過、容器路徑未驗證；兩者都必須由測試 guard 確認使用 SQLite `:memory:` | 不能把任一 PHPUnit 入口寫成 PostgreSQL／Redis 整合通過 |
 | frontend | 相關元件與路由可建置 | `cd frontend && npm run build`；若有明確 lint／type-check script 才執行，沒有就標未提供 | 不能把 build 通過說成瀏覽器視覺／互動全通過 |
 | 跨層／Docker | backend、frontend、配置與資料流都在範圍內 | backend 與 frontend 最低驗證都跑；服務可用時再跑 Compose／健康端點；任一未驗證須列出 | 不能只測一層就宣稱 end-to-end 完成 |
 | 研究／調查 | 問題、時間範圍與來源邊界固定，結論可追溯 | 對每個關鍵結論保留來源／路徑／日期與反例檢查；長報告落檔 | 不能把推測或未查證的外部能力寫成事實 |

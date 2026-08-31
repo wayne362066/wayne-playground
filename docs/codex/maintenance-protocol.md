@@ -79,7 +79,7 @@
 - 模型／effort／agent：只採用當前工具 schema；若沒有 `multi_agent_v1__spawn_agent` 或某個選項，退回主模型或留下審查 Prompt，不編造平行語法。
 - skill／plugin／connector：先看當前 Skills／工具清單，再看 manifest；manifest 只能證明磁碟存在，不證明可呼叫或已登入。未安裝 plugin 不自行 request install。
 - 載入作用：查找所有實際 `AGENTS.md`／`AGENTS.override.md`，只把當前作用路徑的檔案當規則；archive、backup、lessons 不作常駐指示。
-- 驗證入口：目前 `make test` 需要 Docker；host PHP test 不等價。README、Makefile、rubric 三者若矛盾，保留證據並由主模型決定是否詢問或修規則。
+- 驗證入口：目前 `make test` 需要 Docker，並以一次性、無相依服務的 PHP 容器執行；host PHP test 不等價於容器路徑。兩個入口都必須由 guard 確認使用 SQLite `:memory:`，且都不代表 PostgreSQL／Redis 整合。README、Makefile、rubric 三者若矛盾，保留證據並由主模型決定是否詢問或修規則。
 - Git／發佈 gate：確認 `git-review-release-protocol.md` 仍由 `AGENTS.md`、rubric 與實作模板引用；任何 push 或發佈批准必須能對應精確 SHA 與目標，不能從舊對話推定。抽查審核完成後 Codex 只整合至 `develop`，且 Codex 不 merge 或 push `main`；正式 `main` 必須保留給使用者親自合併。
 
 ## 協議的完成條件

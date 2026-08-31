@@ -1,7 +1,7 @@
 COMPOSE := docker compose
 PHP := $(COMPOSE) exec php
 NODE := $(COMPOSE) exec node
-TEST_CACHE_ENV := -e CACHE_STORE=array -e LOTTERY_DUEL_CACHE_STORE=array
+TEST_ENV := -e APP_ENV=testing -e APP_CONFIG_CACHE=bootstrap/cache/config-testing.php -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= -e CACHE_STORE=array -e LOTTERY_DUEL_CACHE_STORE=array -e QUEUE_CONNECTION=sync -e SESSION_DRIVER=array
 
 .PHONY: help up down build restart logs ps shell composer-install npm-install key-generate migrate migrate-fresh seed seed-permissions seed-admin test queue-restart
 
@@ -71,7 +71,7 @@ seed-admin:
 	$(PHP) php artisan db:seed --class=AdminAccountSeeder
 
 test:
-	$(COMPOSE) exec $(TEST_CACHE_ENV) php php artisan test
+	$(COMPOSE) run --rm --no-deps $(TEST_ENV) php php artisan test
 
 queue-restart:
 	$(PHP) php artisan queue:restart
