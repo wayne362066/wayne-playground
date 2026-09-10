@@ -4,7 +4,7 @@
 
 ## 可自行更新的低風險內容
 
-只要不改變核心決策，執行者可自行更新：
+只有本次已授權治理／文件寫入、且不改變核心決策時，執行者可自行更新下列內容。只讀任務與功能分支中遇到的候選教訓先放回報，不因此修改治理檔；待後續治理工作再落檔。
 
 - 已確認的檔案路徑、行號、命令名稱、package script 或 Make target；更新前先讀當前檔案，更新後跑同一個 `test -e`／`rg`／命令驗證。
 - 本 repo 新出現且可重現的工具／權限錯誤與不等價替代驗證；先寫 `docs/codex/lessons.md`，不要立即改 `AGENTS.md`。
@@ -39,7 +39,7 @@
 
 ## 教訓回寫格式與位置
 
-所有候選教訓寫入 `docs/codex/lessons.md`，每筆使用以下欄位：
+在已授權的治理工作中，候選教訓寫入 `docs/codex/lessons.md`，每筆使用以下欄位：
 
 ```text
 ## L-{{遞增編號}} {{短標題}}
@@ -64,23 +64,27 @@
 
 ## 修改、備份與回復流程
 
-1. 先跑 `git status --short --branch`、`git rev-parse --verify HEAD`，查明目標是否已追蹤並記錄修改前 commit。本次 2026-08-04 查證的可回復基線是 `d1c6e9f8215c004f994b2bc7622ecefdaa105ee0`；未來必須以當前 HEAD 重新查證，不能永久沿用此 SHA。
-2. 目標已由 Git 追蹤時，以修改前 commit 與清楚 diff 作為回復證據；目標未追蹤時，先用明確不重複的檔名在 `docs/codex/archive/` 或 `/private/tmp` 建立副本，確認備份不存在且不覆蓋舊備份。若目標不存在，記錄「本次無既有檔，無需備份」。
+1. 先跑 `git status --short --branch`、`git rev-parse --verify HEAD`，查明目標是否已追蹤，分別檢查 staged／unstaged 差異，記錄當前基線，不沿用歷史 SHA。
+2. 已追蹤且與 HEAD 相同的目標：記錄修改前 commit 與本輪 diff 即可。已追蹤但有既有修改：編輯前保存原工作檔副本，並分別保存該路徑的 `git diff --binary` 與 `git diff --cached --binary`，保留 index 與工作區差異；不能只記 HEAD。未追蹤既有檔也必須先建副本。放在不重複的 `docs/codex/archive/` 子目錄或 `mktemp -d` 建立的明確暫存目錄，副本用 `.snapshot`／`.patch` 副檔名，不用 AGENTS／SKILL 的現行指示檔名。先確認不覆蓋，再比對副本內容與差異；不能保存或歸屬不明則停止詢問。目標不存在則記錄無需備份。
 3. 用小 patch 修改；每完成一個核心文件就立即 read-back、做引用檢查，再改下一個文件。
 4. 驗證：`test -s`；對引用路徑用 `test -e`；用 `rg` 檢查工具／命令／模板欄位；有 Git 基線才跑 `git diff --check`，無基線則檢查 `git status --short` 與目標檔案。
 5. 若驗證失敗，依 dispatch playbook 分類；不要靠格式化或重跑掩蓋內容錯誤。回復時先確認精確備份，再以小 patch 還原並重新 read-back。
 
+正例：使用者已改過 rubric，先保存原檔與兩份 Git 差異再改。反例：只記 HEAD，事後以它還原，連使用者未提交內容一起清掉。
+
 ## 失效路徑、模型、工具與指令檢查
 
-每次涉及制度收尾或 session 開始時，做下列查證：
+Session 開始只確認 Git 與適用指示；以下依本次要使用／修改的項目觸發，不要求每個任務全面盤點：
 
 - 路徑：`rg --files` 找到目標，對每個引用跑 `test -e`；不因舊文件提到就假設存在。
 - 指令：讀 `Makefile`、`package.json`、`composer.json`；確認 script／target 仍在。需要執行時記錄 exit code，命令不可用標未確認。
-- 模型／effort／agent：只採用當前工具 schema；若沒有 `multi_agent_v1__spawn_agent` 或某個選項，退回主模型或留下審查 Prompt，不編造平行語法。
+- 模型／effort／agent：需要派工時依 `dispatch-playbook.md` 查當前 schema 與授權，沒有工具才找可用的獨立 session／本地處理方式，不把特定 namespace 當能力唯一判準。
 - skill／plugin／connector：先看當前 Skills／工具清單，再看 manifest；manifest 只能證明磁碟存在，不證明可呼叫或已登入。未安裝 plugin 不自行 request install。
 - 載入作用：查找所有實際 `AGENTS.md`／`AGENTS.override.md`，只把當前作用路徑的檔案當規則；archive、backup、lessons 不作常駐指示。
 - 驗證入口：目前 `make test` 需要 Docker，並以一次性、無相依服務的 PHP 容器執行；host PHP test 不等價於容器路徑。兩個入口都必須由 guard 確認使用 SQLite `:memory:`，且都不代表 PostgreSQL／Redis 整合。README、Makefile、rubric 三者若矛盾，保留證據並由主模型決定是否詢問或修規則。
 - Git／發佈 gate：確認 `git-review-release-protocol.md` 仍由 `AGENTS.md`、rubric 與實作模板引用；任何 push 或發佈批准必須能對應精確 SHA 與目標，不能從舊對話推定。抽查審核完成後 Codex 只整合至 `develop`，且 Codex 不 merge 或 push `main`；正式 `main` 必須保留給使用者親自合併。
+
+只修文字／路徑：read-back 修改文件、檢查受影響的引用與 diff，不要求全量重讀。修改核心決策（權限、範圍、完成、調度、驗證、備份或 Git gate）：完整讀取 `AGENTS.md` 與它直接引用的現行制度文件，對核心產物實做 fresh-context 審查，最多兩輪修正；歷史／evidence 僅核對需要的證據，不遞迴全文載入。無執行能力時留下 `adversarial-review-prompt.md`，獨立審查仍標未完成。只補審查結果、時間或證據路徑不重新啟動核心審查循環。
 
 ## 協議的完成條件
 

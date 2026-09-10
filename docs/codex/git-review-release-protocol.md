@@ -75,13 +75,17 @@
 
 1. 核對已審核的功能 SHA、功能分支、目標 `develop` commit、測試結果與未解意見；任一項改變就重新送審。
 2. 審核完成後，Codex 可自主把該功能分支合併到本地 `develop`，不再改選其他目標。merge／squash／rebase 策略必須沿用 repo 明文慣例；查不到慣例時先詢問使用者。
-3. 發生 conflict、目標 `develop` 前進、合併會帶入其他功能或結果 SHA 無法預測時，停止並詢問；不得自行猜測 conflict 解法或改用另一種合併策略。
+3. 發生 conflict、目標 `develop` 前進、來源不再是已審核 SHA 或合併會帶入未審核範圍時，停止並詢問；不得自行猜測 conflict 解法或改用另一種合併策略。事前核對的是來源／目標 SHA、策略與預期 diff，不要求預知尚未建立的 merge／squash commit SHA。
 4. 合併後重新執行適用測試，記錄新的 `develop` HEAD SHA 與相對遠端的 diff。
 5. 若要把合併後的 `develop` 推到遠端，仍須按「每一次推送都要先審核」提供新 `develop` SHA／remote／ref 並取得單次批准。自主合併不包含自主 push。
 
 停止條件：使用者尚未明確確認該功能 SHA 審核完成、合併策略不明、來源／目標 SHA 不一致、存在未解 review 意見、conflict 或測試失敗時，不合併。
 
-完成條件：功能已合併到本地 `develop` 且合併後驗證有結果；若遠端 `develop` 尚未獲批 push，狀態只能是「已合併 develop，待 push 審核」。
+完成條件：功能已合併到本地 `develop`，且合併後必要驗證全部通過；若遠端 `develop` 尚未獲批 push，才標「已合併 develop，待 push 審核」。若合併後必要驗證失敗或未完成，標「阻塞／未確認」，另註本地已合併的事實與 SHA；不自主 push、發佈或 reset 回復。需要修功能程式碼時仍在獨立分支處理，新 SHA 重新審核，不直接在 `develop` 修補；安全修復路徑不明則詢問。
+
+正例：已核對來源／目標 SHA 與 merge 策略，無 conflict 時建立 merge commit；取得新 SHA 並通過必要驗證後，另送該 SHA 的 push 審核。
+
+反例：合併後 `php artisan test` exit 1，因為「已有結果且已明示」就標待推送，或為了預知 SHA 而猜測 commit 值。
 
 Codex 永遠不執行 `develop` 到 `main` 的 merge，也不直接把功能分支 merge／push 到 `main`。Codex 只提供 `develop` HEAD SHA、相對 `main` 的 commits／diff、驗證與風險；由使用者親自在 Git 平台或本地把 `develop` 合併到正式 `main`。若使用者要求 Codex 代為合併或 push `main`，不得執行；改為提供 `main` 手動合併交接資料。只有使用者另行明確要求修改治理制度時，才可把制度變更當成獨立任務處理，且不得在同一動作中順帶合併 `main`。
 
@@ -92,7 +96,7 @@ Codex 永遠不執行 `develop` 到 `main` 的 merge，也不直接把功能分�
 發佈前必須同時滿足：
 
 1. 使用者已審核確切候選 SHA 的變更與驗證結果。
-2. 所有要求的測試／build 已有結果；失敗或未驗證項已明示。
+2. 候選 SHA 的必要測試／build 全部通過，並記錄命令、exit code 與驗證範圍；必要項失敗、未執行或被跳過時停止。只揭露問題或取得一般 push／發佈批准，不等於取消必要驗證；若使用者要改驗收範圍，先作明確的範圍決策，不由 Codex 自行降級門檻。
 3. 已列出發佈目標、候選 SHA、操作命令／工具、影響範圍與可用回復方式。
 4. `develop` 到 `main` 已由使用者親自合併，或使用者已對非 main 的確切發佈動作明確批准。
 
@@ -120,7 +124,7 @@ push 批准不等於發佈批准，功能 review 完成只授權按本協議整�
 - `待推送審核`：功能與驗證已整理，但尚未取得本次 SHA／remote／ref 的批准。
 - `功能分支已推送，待審核完成`：獲批功能 SHA 已推送，使用者尚未明確確認 review 完成。
 - `待合併 develop`：使用者已確認確切功能 SHA review 完成，尚未自主合併。
-- `已合併 develop，待 push 審核`：本地 `develop` 合併與驗證完成，遠端更新尚未取得批准。
+- `已合併 develop，待 push 審核`：本地 `develop` 合併後必要驗證全部通過，遠端更新尚未取得批准。
 - `develop 已就緒，待使用者合併 main`：合併後 `develop` 已獲批推送，Codex 停止；下一步只能由使用者主動合併正式 `main`。
 - `待發佈`：使用者已親自合併 `main` 或已批准其他精確發佈動作，尚未執行或確認結果。
 - `已發佈`：獲批 SHA 已在獲批目標生效並完成驗證。

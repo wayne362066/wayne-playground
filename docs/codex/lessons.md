@@ -19,6 +19,6 @@
 - 證據：exit code 1；Vite 無法解析 `laravel-echo`，`frontend/package.json` 與 `package-lock.json` 宣告該依賴，但現有 `node_modules` 沒有安裝。
 - 影響：容易把依賴未安裝誤報為 frontend 原始碼錯誤，也可能把沒有跑過的 build 寫成通過。
 - 暫時處理：保留 build 失敗；用 `npm ls laravel-echo` 與 package manifest 分開確認依賴狀態，未自行執行需要 registry 的 `npm install`。
-- 驗證：重新執行 `npm run build` 仍須在依賴安裝完成後確認；目前尚缺安裝後 build 結果。
+- 驗證：2026-08-04 尚缺安裝後結果；2026-09-10 同日治理審查已確認依賴存在且 build exit 0，命令與範圍見 [校正證據](evidence/2026-09-10-governance-review/report.md)。原事件已不再是當前阻塞，不代表未來依賴一定就緒。
 - 泛化邊界：適用於本 repo 的依賴未安裝情境；不代表 lockfile 或 package registry 本身有問題。
 - 升格決定：先維持 provisional lesson；若不同 session 重現且需要固定化，提案更新 frontend README／Makefile，不直接修改核心完成門檻。

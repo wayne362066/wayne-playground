@@ -4,7 +4,7 @@
 
 ## 適用範圍與目前狀態
 
-- 本檔適用整個 repo。2026-08-04 的查找結果是：沒有更上層或子目錄的 `AGENTS.md`／`AGENTS.override.md`，所以目前沒有覆蓋衝突；未來新增子目錄規則時，先列出實際找到的檔案與作用路徑，再按 Codex 實際載入結果處理，不猜測未確認的優先順序。
+- 本檔適用整個 repo；先確認實際全域／專案指示與目標子目錄規則，不把過往「沒有其他指示檔」當永久事實。遇到載入來源或作用範圍不明時，依實際環境與官方文件查證。
 - 本專案是 Laravel 12／PHP backend 加 Vue 3／Vite frontend 的 modular monolith。除非使用者明確要求，治理任務不改業務程式碼、不擴大到正式 CI/CD、微服務、Kubernetes 或部署。
 - 保留使用者既有變更。任何刪除、覆蓋、重建資料、`migrate-fresh`、`docker compose down -v` 或其他不可逆操作，都要先確認精確目標與回復方式；未明確授權就停止並詢問。
 
@@ -20,8 +20,8 @@
    - 本 repo harness 證據：`docs/codex/harness-diagnosis.md`
    - 收尾交接：`docs/codex/future-session-letter.md`
 3. 先寫清楚目標、範圍、禁止事項、完成條件，再執行；不因「順手」修改未授權的業務或流程。
-4. 工具命令失敗時記錄命令、exit code、錯誤與分類。權限／暫時問題只調整條件後重試一次；同策略第二次失敗必須換工具、輸入、分類或方案。推理／架構誤判要取得第二意見或升級，不得原樣重試。
-5. 完成只能以證據宣稱：列出實際變更、適用驗證命令與結果、未驗證／阻塞項。未執行、失敗或僅替代驗證的檢查不得寫成通過。
+4. 工具命令失敗時記錄命令、exit code、錯誤與分類。權限／暫時問題只調整條件後重試一次；同策略第二次失敗必須換路。等待逾時不等於任務失敗，依調度守則處理。推理／架構誤判要取得第二意見或在授權能力內升級，不得原樣重試。
+5. 完成只能以證據宣稱：必要驗證全部通過，列出實際變更、命令／人工步驟與結果、未驗證／阻塞項。未執行、失敗、相關 skip 或不等價替代驗證不得寫成通過；「已有結果」不是完成。
 
 ## 功能、推送、發佈與不確定性 gate
 
@@ -36,15 +36,15 @@
 ## 掃描與 context 邊界
 
 - 優先用 `rg`；只讀與決策直接相關的檔案。不要把依賴、編譯輸出、圖片或完整長 log 帶回主 context。
-- 長報告落在 `docs/codex/evidence/` 下由任務建立的明確子目錄，回報只留實際路徑、摘要、檔案／行號、驗證結果與未解風險。
+- 已授權的治理／報告長產物落在 `docs/codex/evidence/` 的明確任務子目錄；只讀任務或功能分支不因此自行新增治理檔，先回傳摘要或候選教訓。
 - 不把工具清單、模型名稱、effort、connector、CI 或權限寫成已存在能力，除非本 session 已探測或工具回應明確確認。
 
 ## 完成與檔案安全
 
 - 新增或修改檔案後立即 read-back；確認檔案存在、引用路徑存在、沒有未替換的模板標記或虛構命令。
 - 有 Git 基線時跑 `git diff --check`；沒有基線時用 `git status --short`、目標檔案 read-back 與針對性 `rg` 檢查。驗證矩陣以 `docs/codex/decision-rubric.md` 為準。
-- 修改既有指示／治理檔前先確認是否由 Git 追蹤。已追蹤檔記錄修改前 commit 並保留清楚 diff；未追蹤檔建立不覆蓋的副本。副本放在 `docs/codex/archive/` 或工作區外的明確暫存路徑，不放在日常載入位置。
+- 修改既有指示／治理檔前先查 Git 基線。乾淨的已追蹤檔保留修改前 commit 與本輪 diff；有既有修改或未追蹤檔，依維護協議先保存可回復副本與適用差異。備份不覆蓋、不使用現行指示檔名、不放在日常載入位置。
 
 ## 路由器驗證
 
-若這份入口或其引用被修改，收尾必須重新讀取 `AGENTS.md` 與所有被引用文件，執行 `rg -n 'docs/codex|AGENTS|git push|develop|main|合併|發佈|make test|npm run build|php artisan test' AGENTS.md docs/codex`，並列出未確認能力。治理核心修改另須依使用者要求做 fresh-context 對抗審查，或留下 `docs/codex/adversarial-review-prompt.md` 供下一 session 執行。
+文字／路徑修正只 read-back 變更文件與受影響引用；核心決策修改才依 `docs/codex/maintenance-protocol.md` 完整讀取入口與直接引用的現行制度、執行 fresh-context 對抗審查（最多兩輪修正）。無執行能力就留下 `docs/codex/adversarial-review-prompt.md` 並標獨立審查未完成。規則掃描排除 archive／備份／evidence，只在查證時讀指定歷史資料；不要遞迴載入整個引用圖。

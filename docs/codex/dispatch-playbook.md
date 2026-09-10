@@ -1,20 +1,16 @@
 # 模型與工作調度守則
 
-本文件是按需讀取的調度規則。它只記錄本 session 探測到的能力；模型、effort、工具與 connector 變動時，先重新探測再更新，不把名稱當成永久保證。
+本文件是按需讀取的長期調度規則；工具與模型的有日期紀錄放在 evidence，不作永久能力保證。
 
-## 目前已查證的 harness
+## 使用能力前的檢核
 
-截至 2026-08-31；未在本日期重驗的項目仍保留原始日期與未確認邊界：
+1. 需要派工才查當前 agent 工具、參數與使用限制。確認使用者或適用指示已要求委派；本制度要求核心治理變更做獨立審查，但不授權自行建立使用者擁有的新 task、安裝工具或改全域設定。
+2. model／effort 預設省略，依當前工具的繼承規則執行。指定模型須使用者明確要求、值在當前清單且符合工具限制；指定 effort 也須符合當前 schema 與授權。不因任務困難就編造更高模型或自行切換主模型；不能切換時先取第二意見，仍無法決定則交接給使用者選模型。
+3. Fresh-context 審查可由不繼承主對話 history 的 agent，或使用者另開的獨立新 session 執行。記錄實際建立方式、工具／參數或可核對的 session 來源；一般延續上下文的委派不是獨立審查。兩種方式皆不可用時，留下 `adversarial-review-prompt.md`，標記尚未執行。
+4. 工具名稱不同不等於能力不存在；先找等價能力並讀 schema。找不到就主模型本地處理可獨立完成的工作，獨立審查則按上一項交接。不從模式標籤、manifest、舊範例或另一 session 的能力推導可呼叫工具。
+5. 不推測隔離、並行上限、登入狀態或權限；未確認寫入隔離時只讀派工。能力漂移只需記錄與本任務相關的差異，不每次重盤所有 plugin／connector。
 
-- 本 session 工具清單實際暴露 `multi_agent_v1__spawn_agent`、`multi_agent_v1__send_input`、`multi_agent_v1__wait_agent`、`multi_agent_v1__resume_agent` 與 `multi_agent_v1__close_agent`。`multi_agent_v1__spawn_agent` schema 支援 `fork_context`、可選 `model`、可選 `reasoning_effort` 與可選 `service_tier`；未查到 `parallel` 參數，同時提交多個 spawn 也未在本 session 成功驗證，不得當成永久能力，只有當前 executor 明確支援且實測成功時才可使用。
-- 本 session 的 `collaboration_mode` 是執行模式標籤，不是可呼叫的 agent 工具名稱；不得用它取代當前工具 schema。下一 session 若工具清單改變，先重新探測再更新本段。
-- spawn 工具列出的 model override 是：`gpt-5.6-sol`（low／medium／high／xhigh／max／ultra）、`gpt-5.6-terra`（low／medium／high／xhigh／max／ultra）、`gpt-5.6-luna`（low／medium／high／xhigh／max）、`gpt-5.5`（low／medium／high／xhigh）、`gpt-5.4`（low／medium／high／xhigh）。工具描述給出的定位分別是 latest frontier、balanced、fast/affordable、frontier、strong everyday；這些定位不等同於本 session 的實際主模型。
-- 正式調度規則：預設不傳 `model`／`reasoning_effort`，讓 agent 繼承 parent；只有任務有清楚的模型理由且該選項仍在當前工具 schema 時才覆蓋。不可填入未列出的模型、effort、tier 或 `parallel` 參數。
-- `fork_context: false` 代表新 agent 只收到派工訊息，適合 fresh-context 審查；`true` 會帶入目前 thread history，適合延續高度依賴的工作。選擇後必須在回報中寫明。
-- 2026-08-31 查證：`make test` 使用 `docker compose run --rm --no-deps` 建立一次性 PHP 容器，強制 SQLite `:memory:` 與 array／sync 測試後端，通過 55 tests、1 skipped、1146 assertions；host `cd backend && php artisan test` 也通過相同測試。兩個入口都不代表 PostgreSQL／Redis 整合。普通 sandbox 仍會被 Docker socket 權限阻塞，需在獲准條件下執行容器入口；主機有 PHP 與 Node／npm，但沒有全域 `composer`。這些是本 session 的環境證據，不是所有 session 的保證。
-- 磁碟上查到 system／plugin skill manifests（如 browser、documents、pdf、presentations、spreadsheets、github、sites、visualize、imagegen、openai-docs、skill/plugin creator 等），但「有 manifest」不代表當前 session 可呼叫。只使用本 session Skills 清單或工具清單明確暴露的能力；目前可見的 app connector 主要是 GitHub、Sites、Codex document control、plugin management 與 hotline。未查到 Gmail、Slack、Calendar、Drive、Notion、Box、Figma、Atlassian、Outlook、SharePoint、Teams 的可呼叫工具，且它們在 recommended plugins 中標為未安裝，不得自行假設可用。
-- repo 的 `.agents/`、`.codex/` 沒有工作區檔案；沒有 CI、`.github/`、scripts 或專案專用持久化機制。治理文件落在 repo 是唯一已確認可長期保存的方式；Codex thread／agent 狀態的跨 session 持久化未確認。
-- 當前主模型名稱、主模型 reasoning effort、可同時執行的 agent 上限、Docker sandbox 外的 daemon 權限、CI remote 與 connector 認證狀態均未確認。
+最近校正紀錄：[2026-09-10 證據](evidence/2026-09-10-governance-review/report.md)。只有查歷史差異時才讀；實際呼叫以本 session schema 為準。
 
 ## 主模型與 agent 的責任
 
@@ -55,11 +51,20 @@ agent 只負責派工訊息內的明確切片。它不得擴大寫入範圍、�
 3. 必讀資料：入口規則、相關檔案與現有證據；不要只寫「自行研究」。
 4. 執行方式：直接工作或 fresh context、是否可平行、model／effort 是否省略或使用當前 schema 的明確值。
 5. 驗收條件：輸出檔案、必須通過的機械檢查、允許的未驗證狀態。
-6. 停止／升級條件：遇到哪些錯誤要停、問人或換路。
+6. 停止／升級條件：遇到哪些錯誤要停、問人或換路；agent 任務附總執行時間上限，等待處理見下節。
 7. 回報格式：結論、檔案與行號、驗證結果、未解風險；長內容落檔只回路徑與摘要。
 8. 若為功能寫入：獨立分支、基底 commit、禁止 agent push／merge／發佈、review 後唯一整合目標 `develop`，以及 `main` 由使用者親自合併。
 
-缺欄的派工不可送出。回報缺欄時退回補充，不自行猜測。
+缺欄的派工不可送出；不適用欄位明寫原因。回報缺必要欄位時可要求同一 agent 補充一次；仍不足就主模型核對原始證據或標未驗證，不反覆派工補格式。
+
+## 等待與 agent 生命週期
+
+- 開始時記錄 agent ID、時間與總執行上限；一般只讀掃描／治理審查預設 10 分鐘，可在派工前依範圍明定其他上限。這是工作預算，不是工具能力或失敗判準。
+- agent 工作期間先做不重疊的本地工作；只有下一步需要結果時才等待。每次等待不超過 60 秒，期間維持進度溝通，不用短間隔反覆輪詢。
+- 等待期限到了但沒有終態：仍是執行中／尚無終態，不計入失敗次數，不重開同任務 agent。到總上限才停止等待、以可用工具取消／關閉，記錄實際回應，交接「未取得結果」；不能假稱 agent 已失敗或已停止。
+- 收到 completed：先收取並核對報告再關閉。收到明確 errored 或執行失敗：才按下節分類。需要新權限／使用者決策時立即回報，不靠等待取得授權。
+
+正例：兩次等待逾時、尚在總上限內，保留原 agent 並繼續等待。反例：兩次輪詢無回報就套用「同策略失敗兩次」，關閉並重派同一問題。
 
 ## 失敗分類與下一步
 
@@ -85,7 +90,7 @@ agent 只負責派工訊息內的明確切片。它不得擴大寫入範圍、�
 
 功能回報另加「分支／審核狀態」：分支、基底 SHA、HEAD SHA，以及 `功能分支中`／`待推送審核`／`功能分支已推送，待審核完成`／`待合併 develop`／`已合併 develop，待 push 審核`／`develop 已就緒，待使用者合併 main`／`待發佈`／`已發佈`／`阻塞／未確認`。沒有對應證據不得提升狀態；Codex 不得把狀態提升為「已合併 main」。
 
-超過主模型需要的長掃描、研究或審查報告，落在 `docs/codex/evidence/` 的明確任務子目錄；不要只留在 agent 對話。可重現、可泛化且有證據的模式才寫回 `docs/codex/lessons.md`，達到 maintenance protocol 的升格條件後才改核心規則或 Skill。
+報告輸出先明定「只回傳摘要」或「可寫的精確報告路徑」。只有已授權治理／報告寫入時，長產物才落在 `docs/codex/evidence/` 的任務子目錄；只讀或功能分支任務不能因本條自行加治理檔。候選教訓依 `maintenance-protocol.md` 的範圍與升格條件處理。
 
 ## 調度自查
 

@@ -1,8 +1,22 @@
 # Harness 快速診斷
 
-日期：2026-08-04
+初始診斷日期：2026-08-04；最近校正：2026-09-10。
 
-本診斷只根據目前工作區與已暴露工具的可觀察證據，不把未查證的模型、服務或流程寫成既定能力。後續制度文件必須對應這三項問題；若 repo 結構改變，先重跑本診斷的證據命令。
+本檔是診斷與歷史證據，不是工具清單或日常指示。每節僅適用其標示日期；舊節中的「目前／本 session」不指讀者的新 session。
+
+## 2026-09-10：現有制度的三個主要缺口
+
+基線、工具回應、獨立審查與產品驗證見 [校正證據](evidence/2026-09-10-governance-review/report.md)。原入口與文件已存在；本輪修正的是既有制度的執行缺口，不再宣稱「尚無治理」。
+
+| 優先級／問題 | 修改前證據、原因與影響 | 本輪修法／驗證方式 |
+| --- | --- | --- |
+| P1 錯誤完成 | Git 協議第 84 行只要求合併後驗證「有結果」，模板第 214 行固定轉待推送；失敗也可能被提升狀態 | 必要驗證全部通過才提升，skip 與替代測試分開；以合併後 exit 1 的固定情境與獨立審查核對 |
+| P2 任務失焦／不必要停頓 | 調度文件第 9 行的 service_tier 已不在本次 schema；舊交接把兩次等待逾時當策略失敗；Git 協議要求預知結果 SHA | 能力清單移到有日期 evidence；區分等待與失敗、核對合併輸入而非猜結果 SHA；對照當前 schema 與固定情境 |
+| P2 context 浪費 | AGENTS 第 50 行讓任一引用修正觸發全量重讀，入口與直接引用共 954 行；例行開始還需全面能力盤點 | 小修正只查受影響引用，核心決策才全讀／獨立審查；以單檔錯字案例確認讀取與寫入範圍 |
+
+本輪是文件校正，不新增 CI 或驗證框架。是否通過本輪驗收以證據檔的完成紀錄為準，不由本表自行宣稱。
+
+## 以下為歷史診斷（2026-08-31／2026-08-04）
 
 ## 2026-08-31 測試入口差異
 
@@ -15,7 +29,7 @@
 ### 實際證據
 
 - 目前 `git status --short --branch` 顯示 `develop...origin/develop`，HEAD `d1c6e9f8215c004f994b2bc7622ecefdaa105ee0`；Git 回復基線已具備，但仍沒有 CI diff gate。
-- 根目錄 `Makefile` 提供 Docker／migration／seed／test／queue 操作；`test` 是 `docker compose exec` 的 backend 入口，沒有 root `build`、前端 build、lint、type-check 或 format 驗證 target。
+- 根目錄 `Makefile` 提供 Docker／migration／seed／test／queue 操作；當時 `test` 是 `docker compose exec` 的 backend 入口。2026-09-10 回查該基線 Makefile 後校正：當時已有 root `build`，用途為 Docker image build；缺少的是統一前端 build、lint、type-check 或 format 驗證入口，不是完全沒有 build target。
 - README 的測試段落只有 `make test`，新增模組流程才額外提到 `cd frontend && npm run build`；兩者沒有被一個可重複的整合檢查串起來。
 - 已觀察到 `backend/vendor/`、`frontend/node_modules/`、`frontend/dist/` 與二進位 `frontend/src/assets/hero.png` 在工作區；若掃描或 diff 未排除生成物，結果容易失真。
 - 2026-08-04 實跑結果顯示執行條件重要：`make test` 因 Docker socket `operation not permitted` 失敗；主機 `cd backend && php artisan test` 通過 54 tests、1 skipped、1140 assertions，但不能替代 Compose／PostgreSQL／Redis 整合測試。`cd frontend && npm run build` 因 `package.json` 宣告的 `laravel-echo` 尚未出現在現有 `node_modules` 而失敗；這是依賴安裝狀態未就緒的 build 阻塞，不足以判定 frontend 原始碼錯誤。
@@ -97,7 +111,7 @@
 
 - 執行掃描時確認命令含排除項，且輸出不包含依賴與二進位內容。
 - 用 `wc -l`／`git diff --stat` 檢查回報與變更是否維持在任務所需規模；長報告必須有落檔路徑。
-- 新 session 只讀 `AGENTS.md` 加上任務觸發的單一制度文件，即可找到執行方式、停止條件與驗證標準。
+- 原目標為按需閱讀；2026-09-10 校正：「單一制度文件」不是硬性上限，功能任務可能同時需要 Git 協議與 rubric，不能為了只讀一份漏掉必要規則。
 
 ## 後續文件對應
 
@@ -111,4 +125,4 @@
 
 - 根目錄現有可用 commit 基線；治理變更以修改前 HEAD、`git diff`、`git diff --check`、read-back 與引用檢查驗證。未來 session 必須重新取得當前 HEAD，不能沿用本次 SHA。
 - 本 session 的普通 sandbox 無法使用 Docker socket；host backend 測試可通過，但 Compose 整合未驗證。frontend build 受現有 `node_modules` 缺少 `laravel-echo` 阻塞；執行 `npm install` 的網路／registry 狀態尚未確認。
-- 尚未確認是否存在未暴露於本工具清單的其他模型或正式委派語法；制度只引用已暴露的 `multi_agent_v1__spawn_agent` 等完整工具名稱，並保留未確認標記。
+- 當時只確認該 session 暴露的 agent 工具；2026-09-10 起現行調度規則改採使用前查證，歷史 namespace 不作永久呼叫依據。
